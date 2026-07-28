@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>2차원 도형(정사각형)의 4차원 회전 시뮬레이터</title>
+<style>
+:root{
+  --bg:#0f172a; --deep:#020617; --panel:#111827; --card:#0b1220;
+  --line:#334155; --line2:#475569; --text:#f8fafc; --muted:#94a3b8;
+  --red:#ff4646; --blue:#2f89ff; --purple:#b05cff; --purple2:#7c3aed;
+  --cyan:#06b6d4; --yellow:#f5c542;
+}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:Pretendard,"Noto Sans KR","Malgun Gothic",Arial,sans-serif;}
+body{display:flex;flex-direction:column;}
+header{height:60px;flex-shrink:0;background:#0b1220;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:center;position:relative;}
+header h1{margin:0;font-size:28px;line-height:1;font-weight:900;letter-spacing:-0.03em;}
+.badge{position:absolute;left:14px;top:17px;padding:5px 13px;border-radius:999px;background:#2e1d53;border:1px solid #7c3aed;color:#ded6ff;font-size:13px;font-weight:800;}
+main{flex:1;display:flex;min-height:0;overflow:hidden;}
+.left{width:42.5%;min-width:520px;max-width:790px;background:#0f172a;border-right:1px solid var(--line);padding:12px;display:flex;flex-direction:column;gap:10px;overflow:hidden;min-height:0;}
+.right{flex:1;position:relative;background:radial-gradient(circle at 48% 45%,#192537 0%,#0a1120 54%,#020617 100%);overflow:hidden;}
+.card{background:linear-gradient(180deg,rgba(17,24,39,.94),rgba(10,18,32,.94));border:1px solid var(--line2);border-radius:15px;box-shadow:0 10px 28px rgba(0,0,0,.2);}
+.formulaCard{height:158px;flex-shrink:0;padding:16px 18px;text-align:center;display:flex;flex-direction:column;justify-content:center;}
+.formulaTitle{font-size:22px;font-weight:900;margin-bottom:16px;letter-spacing:.02em;}
+.math{font-family:Cambria,Georgia,"Times New Roman",serif;font-style:italic;font-weight:700;white-space:nowrap;}
+.formula{font-size:37px;letter-spacing:.03em;line-height:1;white-space:nowrap;}
+.vec{position:relative;display:inline-block;padding:0 .03em;}
+.vec::after{content:"→";position:absolute;left:.05em;top:-.45em;font-size:.58em;font-style:normal;font-weight:700;}
+.sub{font-size:.55em;vertical-align:-0.34em;}
+.sup{font-size:.56em;vertical-align:.62em;}
+.formulaHint{font-size:14px;color:var(--muted);margin-top:12px;line-height:1.35;}
+.barsCard{height:292px;flex-shrink:0;padding:14px 18px 12px;position:relative;}
+.sectionTitle{font-size:23px;font-weight:900;margin:0 0 8px;}
+.legend{position:absolute;right:20px;top:19px;color:#cbd5e1;font-size:12.5px;font-weight:700;}
+.legend span{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-1px;}
+.bars{height:228px;display:grid;grid-template-columns:repeat(4,1fr);gap:22px;align-items:end;padding:0 12px;}
+.barGroup{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;position:relative;min-width:0;}
+.barLabel{height:48px;display:flex;align-items:center;justify-content:center;flex-direction:column;margin-bottom:5px;color:white;text-shadow:0 2px 10px rgba(0,0,0,.55);white-space:nowrap;line-height:1;}
+.var{display:inline-block;white-space:nowrap;font-size:34px;line-height:1;}
+.hiddenTxt{display:block;font-family:inherit;font-style:normal;font-size:15px;color:#d1b4ff;margin-top:5px;line-height:1;white-space:nowrap;}
+.barBox{height:150px;width:58px;border-radius:12px;background:#020617;border:2px solid #637083;overflow:hidden;position:relative;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),0 10px 18px rgba(0,0,0,.25);}
+.barBox.purple{border-color:var(--purple2);box-shadow:0 0 0 3px rgba(124,58,237,.22), inset 0 0 0 1px rgba(255,255,255,.08);}
+.fillRed,.fillBlue{position:absolute;left:0;width:100%;bottom:0;background-size:100% 10px;transition:height .08s linear,bottom .08s linear;}
+.fillRed{background-image:repeating-linear-gradient(to top,var(--red) 0 6px,transparent 6px 9px);}
+.fillBlue{background-image:repeating-linear-gradient(to top,var(--blue) 0 6px,transparent 6px 9px);}
+.valuePair{height:30px;margin-top:5px;font-size:12px;font-weight:900;line-height:1.1;text-align:center;}
+.valuePair .r{color:var(--red)} .valuePair .b{color:var(--blue)}
+.controlsCard{flex:1;min-height:0;padding:12px;display:flex;flex-direction:column;gap:10px;overflow:hidden;}
+.sliderGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;flex:1;min-height:0;}
+.sliderBox{min-height:0;background:#111c2d;border:1px solid #28384e;border-radius:10px;padding:8px 11px;display:flex;flex-direction:column;justify-content:center;}
+.sliderBox.purple{background:#26184a;border-color:#713bbd;}
+.sliderHead{display:flex;align-items:center;justify-content:space-between;font-size:15px;font-weight:900;margin-bottom:3px;}
+.sliderSub{font-size:10.5px;color:var(--muted);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sliderBox.purple .sliderSub{color:#c4a4ff;}
+input[type=range]{width:100%;margin:0;height:16px;accent-color:var(--purple2);cursor:pointer;}
+.sliderBox:not(.purple) input[type=range]{accent-color:#a7b4c8;}
+.buttons{height:50px;flex-shrink:0;display:flex;gap:10px;}
+button{border:0;border-radius:999px;color:white;font-weight:900;font-size:15px;cursor:pointer;box-shadow:0 7px 18px rgba(0,0,0,.28);transition:transform .08s,filter .08s;}
+button:active{transform:scale(.97)}
+.play{flex:1.55;background:linear-gradient(135deg,#6557ff,#5138e5);}
+.ex4{flex:.44;background:linear-gradient(135deg,#9a2ee9,#6d28d9);}
+.ex3{flex:.44;background:linear-gradient(135deg,#05b7cf,#07849c);}
+.reset{flex:.62;background:#425167;border:1px solid #5b6c82;}
+#stage{position:absolute;inset:0;width:100%;height:100%;}
+.coordWidget{position:absolute;left:24px;top:24px;width:150px;height:150px;border-radius:14px;background:rgba(21,32,50,.82);border:1px solid #526177;box-shadow:0 10px 24px rgba(0,0,0,.28);display:flex;align-items:center;justify-content:center;z-index:3;backdrop-filter:blur(8px);}
+.mouseNote{position:absolute;right:22px;top:28px;z-index:3;background:rgba(15,23,42,.82);border:1px solid #526177;border-radius:12px;padding:10px 16px;color:#d7dee8;font-size:14px;font-weight:800;}
+.infoGrid{position:absolute;left:24px;bottom:24px;display:grid;grid-template-columns:210px 260px;gap:10px;z-index:3;}
+.infoBox{background:rgba(15,23,42,.82);border:1px solid #526177;border-radius:11px;padding:10px 13px;min-height:60px;backdrop-filter:blur(8px);}
+.infoBox h3{margin:0 0 6px;font-size:15px;color:#f8fafc;}
+.infoBox div{font-size:13px;color:#d6dde8;line-height:1.35;}
+@media(max-width:1100px){html,body{overflow:auto}main{flex-direction:column}.left{width:100%;min-width:0;max-width:none;overflow:hidden}.right{height:650px;flex:none}}
+</style>
+</head>
+<body>
+<header>
+  <div class="badge">2D 정사각형 + 4D 회전 통합판</div>
+  <h1>2차원 도형(정사각형)의 4차원 회전 시뮬레이터</h1>
+</header>
+<main>
+  <section class="left">
+    <div class="card formulaCard">
+      <div class="formulaTitle">차원 성분 보존 법칙</div>
+      <div class="formula math">|<span class="vec">v</span>|<span class="sup">2</span> = v<span class="sub">x</span><span class="sup">2</span> + v<span class="sub">y</span><span class="sup">2</span> + v<span class="sub">z</span><span class="sup">2</span> + v<span class="sub">w</span><span class="sup">2</span> = 1</div>
+      <div class="formulaHint">정사각형의 처음 위치는 z=-2입니다.<br>XY 평면에 대한 회전에서는 z,w 성분이 회전합니다.</div>
+    </div>
+    <div class="card barsCard">
+      <h2 class="sectionTitle">각 축 성분의 제곱 분포</h2>
+      <div class="legend"><span style="background:var(--red)"></span>가로 모서리&nbsp;&nbsp;<span style="background:var(--blue)"></span>세로 모서리</div>
+      <div class="bars">
+        <div class="barGroup"><div class="barLabel math"><span class="var">v<span class="sub">x</span><span class="sup">2</span></span></div><div class="barBox"><div id="xRed" class="fillRed"></div><div id="xBlue" class="fillBlue"></div></div><div class="valuePair"><div id="xR" class="r">100%</div><div id="xB" class="b">0%</div></div></div>
+        <div class="barGroup"><div class="barLabel math"><span class="var">v<span class="sub">y</span><span class="sup">2</span></span></div><div class="barBox"><div id="yRed" class="fillRed"></div><div id="yBlue" class="fillBlue"></div></div><div class="valuePair"><div id="yR" class="r">0%</div><div id="yB" class="b">100%</div></div></div>
+        <div class="barGroup"><div class="barLabel math"><span class="var">v<span class="sub">z</span><span class="sup">2</span></span><span class="hiddenTxt">(Hidden)</span></div><div class="barBox purple"><div id="zRed" class="fillRed"></div><div id="zBlue" class="fillBlue"></div></div><div class="valuePair"><div id="zR" class="r">0%</div><div id="zB" class="b">0%</div></div></div>
+        <div class="barGroup"><div class="barLabel math"><span class="var">v<span class="sub">w</span><span class="sup">2</span></span><span class="hiddenTxt">(4D)</span></div><div class="barBox purple"><div id="wRed" class="fillRed"></div><div id="wBlue" class="fillBlue"></div></div><div class="valuePair"><div id="wR" class="r">0%</div><div id="wB" class="b">0%</div></div></div>
+      </div>
+    </div>
+    <div class="card controlsCard">
+      <div class="sliderGrid">
+        <div class="sliderBox"><div class="sliderHead"><span>XY 평면에 대한 회전</span><span id="xyVal">0°</span></div><div class="sliderSub">고정: x,y · 회전: z,w · 고정: x,y · 회전: z,w</div><input id="xy" type="range" min="0" max="360" value="0"></div>
+        <div class="sliderBox purple"><div class="sliderHead"><span>XW 평면에 대한 회전</span><span id="xwVal">0°</span></div><div class="sliderSub">고정: x,w · 회전: y,z</div><input id="xw" type="range" min="0" max="360" value="0"></div>
+        <div class="sliderBox"><div class="sliderHead"><span>YZ 평면에 대한 회전</span><span id="yzVal">0°</span></div><div class="sliderSub">고정: y,z · 회전: x,w</div><input id="yz" type="range" min="0" max="360" value="0"></div>
+        <div class="sliderBox purple"><div class="sliderHead"><span>YW 평면에 대한 회전</span><span id="ywVal">0°</span></div><div class="sliderSub">고정: y,w · 회전: x,z</div><input id="yw" type="range" min="0" max="360" value="0"></div>
+        <div class="sliderBox"><div class="sliderHead"><span>XZ 평면에 대한 회전</span><span id="xzVal">0°</span></div><div class="sliderSub">고정: x,z · 회전: y,w</div><input id="xz" type="range" min="0" max="360" value="0"></div>
+        <div class="sliderBox purple"><div class="sliderHead"><span>ZW 평면에 대한 회전</span><span id="zwVal">0°</span></div><div class="sliderSub">고정: z,w · 회전: x,y</div><input id="zw" type="range" min="0" max="360" value="0"></div>
+      </div>
+      <div class="buttons"><button id="play" class="play">▶ 4차원 동시 회전 재생</button><button id="ex4" class="ex4">4D 예시</button><button id="ex3" class="ex3">3D 예시</button><button id="reset" class="reset">처음 위치로</button></div>
+    </div>
+  </section>
+  <section class="right">
+    <div class="coordWidget">
+      <svg width="128" height="128" viewBox="0 0 160 160">
+        <defs><marker id="cwArrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3 z" fill="#94a3b8"/></marker><marker id="cwArrowP" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3 z" fill="#b05cff"/></marker></defs>
+        <text x="80" y="20" fill="#f8fafc" text-anchor="middle" font-size="14" font-weight="900">4차원 좌표계</text>
+        <g stroke-width="4" stroke-linecap="round"><line x1="80" y1="86" x2="128" y2="86" stroke="#94a3b8" marker-end="url(#cwArrow)"/><line x1="80" y1="86" x2="80" y2="38" stroke="#94a3b8" marker-end="url(#cwArrow)"/><line x1="80" y1="86" x2="42" y2="124" stroke="#94a3b8" marker-end="url(#cwArrow)"/><line x1="80" y1="86" x2="120" y2="126" stroke="#b05cff" stroke-dasharray="7 5" marker-end="url(#cwArrowP)"/></g>
+        <circle cx="80" cy="86" r="5" fill="white"/><text x="135" y="91" fill="#94a3b8" font-size="18" font-weight="900">X</text><text x="75" y="34" fill="#94a3b8" font-size="18" font-weight="900">Y</text><text x="30" y="140" fill="#94a3b8" font-size="18" font-weight="900">Z</text><text x="126" y="143" fill="#b05cff" font-size="18" font-weight="900">W</text>
+      </svg>
+    </div>
+    <div class="mouseNote">마우스로 드래그: 보는 방향 회전 · 휠: 확대/축소</div>
+    <svg id="stage" viewBox="0 0 1000 700" preserveAspectRatio="xMidYMid meet">
+      <defs><marker id="axisArrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3 z" fill="#94a3b8"/></marker><filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter><radialGradient id="faceGrad" cx="45%" cy="40%" r="70%"><stop offset="0%" stop-color="#9aa8ba" stop-opacity=".62"/><stop offset="100%" stop-color="#64748b" stop-opacity=".32"/></radialGradient></defs>
+      <g id="grid" stroke="#233044" stroke-width="1" opacity=".72"></g><g id="axes" stroke-width="3.2" stroke-linecap="round" opacity=".82"></g>
+      <g id="wShadow" opacity="0"><polygon id="wPoly" fill="#b05cff" opacity=".10" stroke="#b05cff" stroke-width="2" stroke-dasharray="9 8"></polygon><g id="wLines" stroke="#b05cff" stroke-width="2" stroke-dasharray="6 8"></g></g>
+      <g id="square" filter="url(#glow)"><polygon id="face" fill="url(#faceGrad)" stroke="rgba(255,255,255,.45)" stroke-width="1.4"></polygon><line id="edgeA" stroke="#ff4646" stroke-width="5" stroke-linecap="round"></line><line id="edgeB" stroke="#ff4646" stroke-width="5" stroke-linecap="round"></line><line id="edgeC" stroke="#2f89ff" stroke-width="5" stroke-linecap="round"></line><line id="edgeD" stroke="#2f89ff" stroke-width="5" stroke-linecap="round"></line><g id="nodes"></g></g>
+    </svg>
+    <div class="infoGrid"><div class="infoBox"><h3>3차원 투영</h3><div id="projectionInfo">현재 면적 ≈ 1.0000</div></div><div class="infoBox"><h3>보존 확인</h3><div id="conserveInfo">e₁² = 1.0000 · e₂² = 1.0000</div></div><div class="infoBox"><h3>e₁ 성분 (방향 x)</h3><div id="e1Info">(1.000, 0.000, 0.000, 0.000)</div></div><div class="infoBox"><h3>e₂ 성분 (방향 y)</h3><div id="e2Info">(0.000, 1.000, 0.000, 0.000)</div></div></div>
+  </section>
+</main>
+<script>
+const $=(id)=>document.getElementById(id);
+const sliders={xy:$('xy'),yz:$('yz'),xz:$('xz'),xw:$('xw'),yw:$('yw'),zw:$('zw')};
+const vals={xy:$('xyVal'),yz:$('yzVal'),xz:$('xzVal'),xw:$('xwVal'),yw:$('ywVal'),zw:$('zwVal')};
+const baseCorners=[[-1,-1,-2,0],[1,-1,-2,0],[1,1,-2,0],[-1,1,-2,0]];
+let yaw=-0.42,pitch=0.15,zoom=1.0,playing=false,playT0=null;
+function deg2rad(d){return d*Math.PI/180;}
+function rotatePair(v,i,j,deg){const t=deg2rad(deg),c=Math.cos(t),s=Math.sin(t);const a=v[i],b=v[j];v[i]=a*c-b*s;v[j]=a*s+b*c;return v;}
+function transform4(v0){let v=v0.slice();
+  // '~ 평면에 대한 회전': 그 평면의 두 좌표는 고정하고, 수직인 두 좌표가 회전합니다.
+  rotatePair(v,0,3,+sliders.yz.value); // YZ 평면에 대한 회전: x,w 회전
+  rotatePair(v,1,3,+sliders.xz.value); // XZ 평면에 대한 회전: y,w 회전
+  rotatePair(v,1,2,+sliders.xw.value); // XW 평면에 대한 회전: y,z 회전
+  rotatePair(v,0,2,+sliders.yw.value); // YW 평면에 대한 회전: x,z 회전
+  rotatePair(v,0,1,+sliders.zw.value); // ZW 평면에 대한 회전: x,y 회전
+  rotatePair(v,2,3,+sliders.xy.value); // XY 평면에 대한 회전: z,w 회전
+  return v;
+}
+function view3(p){const[x,y,z]=p;const cy=Math.cos(yaw),sy=Math.sin(yaw);let x1=x*cy+z*sy;let z1=-x*sy+z*cy;const cp=Math.cos(pitch),sp=Math.sin(pitch);let y1=y*cp-z1*sp;let z2=y*sp+z1*cp;return[x1,y1,z2];}
+function project3(v){const[x,y,z,w]=v;const[vx,vy,vz]=view3([x,y,z]);const scale=180*zoom,persp=7.5,f=persp/(persp+vz*.32);return{x:500+vx*scale*f,y:356-vy*scale*f,z:vz,w:w,f:f};}
+function pstr(points){return points.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');}function setLine(id,a,b){const el=$(id);el.setAttribute('x1',a.x);el.setAttribute('y1',a.y);el.setAttribute('x2',b.x);el.setAttribute('y2',b.y);}function polygonArea(pts){let s=0;for(let i=0;i<pts.length;i++){const a=pts[i],b=pts[(i+1)%pts.length];s+=a.x*b.y-b.x*a.y;}return Math.abs(s)/2;}
+function drawGridAndAxes(){const grid=$('grid');grid.innerHTML='';const size=5,step=1;for(let i=-size;i<=size;i+=step){let a=project3([i,-1.25,-size,0]),b=project3([i,-1.25,size,0]);let l=document.createElementNS('http://www.w3.org/2000/svg','line');l.setAttribute('x1',a.x);l.setAttribute('y1',a.y);l.setAttribute('x2',b.x);l.setAttribute('y2',b.y);grid.appendChild(l);a=project3([-size,-1.25,i,0]);b=project3([size,-1.25,i,0]);l=document.createElementNS('http://www.w3.org/2000/svg','line');l.setAttribute('x1',a.x);l.setAttribute('y1',a.y);l.setAttribute('x2',b.x);l.setAttribute('y2',b.y);grid.appendChild(l);}const axes=$('axes');axes.innerHTML='';const origin=project3([0,0,0,0]);const axisData=[{p:[2.25,0,0,0],label:'X',color:'#94a3b8'},{p:[0,2.25,0,0],label:'Y',color:'#94a3b8'},{p:[0,0,2.25,0],label:'Z',color:'#94a3b8'}];for(const a of axisData){const q=project3(a.p);const line=document.createElementNS('http://www.w3.org/2000/svg','line');line.setAttribute('x1',origin.x);line.setAttribute('y1',origin.y);line.setAttribute('x2',q.x);line.setAttribute('y2',q.y);line.setAttribute('stroke',a.color);line.setAttribute('marker-end','url(#axisArrow)');axes.appendChild(line);const txt=document.createElementNS('http://www.w3.org/2000/svg','text');txt.setAttribute('x',q.x+10);txt.setAttribute('y',q.y+5);txt.setAttribute('fill',a.color);txt.setAttribute('font-size','22');txt.setAttribute('font-weight','900');txt.textContent=a.label;axes.appendChild(txt);}}
+function componentBars(e1,e2){const ids=['x','y','z','w'];ids.forEach((id,idx)=>{const r=e1[idx]*e1[idx],b=e2[idx]*e2[idx];const rp=Math.round(r*100),bp=Math.round(b*100);const red=$(id+'Red'),blue=$(id+'Blue');red.style.height=rp+'%';blue.style.height=bp+'%';blue.style.bottom=rp+'%';$(id+'R').textContent=rp+'%';$(id+'B').textContent=bp+'%';});}
+function fmt(v){return v.map(x=>(Math.abs(x)<.0005?0:x).toFixed(3)).join(', ');}
+function update(){for(const k of Object.keys(sliders)) vals[k].textContent=Math.round(+sliders[k].value)+'°';drawGridAndAxes();const corners4=baseCorners.map(transform4);const pts=corners4.map(project3);$('face').setAttribute('points',pstr(pts));setLine('edgeA',pts[0],pts[1]);setLine('edgeB',pts[3],pts[2]);setLine('edgeC',pts[0],pts[3]);setLine('edgeD',pts[1],pts[2]);const nodes=$('nodes');nodes.innerHTML='';for(const p of pts){const c=document.createElementNS('http://www.w3.org/2000/svg','circle');c.setAttribute('cx',p.x);c.setAttribute('cy',p.y);c.setAttribute('r',5.5);c.setAttribute('fill','#0b1220');c.setAttribute('stroke','#f8fafc');c.setAttribute('stroke-width','2');nodes.appendChild(c);}const wMag=corners4.reduce((s,p)=>s+Math.abs(p[3]),0)/4;if(wMag>.02){$('wShadow').setAttribute('opacity','1');const ghost=pts.map(p=>({x:p.x+p.w*95*zoom,y:p.y-p.w*68*zoom}));$('wPoly').setAttribute('points',pstr(ghost));const wl=$('wLines');wl.innerHTML='';for(let i=0;i<pts.length;i++){const l=document.createElementNS('http://www.w3.org/2000/svg','line');l.setAttribute('x1',pts[i].x);l.setAttribute('y1',pts[i].y);l.setAttribute('x2',ghost[i].x);l.setAttribute('y2',ghost[i].y);wl.appendChild(l);}}else{$('wShadow').setAttribute('opacity','0');}const e1=transform4([1,0,0,0]);const e2=transform4([0,1,0,0]);componentBars(e1,e2);const e1Len=e1.reduce((s,a)=>s+a*a,0);const e2Len=e2.reduce((s,a)=>s+a*a,0);const projectedArea=polygonArea(pts);const initArea=polygonArea(baseCorners.map(project3));const areaRatio=initArea?projectedArea/initArea:1;$('projectionInfo').textContent='현재 면적 ≈ '+areaRatio.toFixed(4);$('conserveInfo').textContent='e₁² = '+e1Len.toFixed(4)+' · e₂² = '+e2Len.toFixed(4);$('e1Info').textContent='('+fmt(e1)+')';$('e2Info').textContent='('+fmt(e2)+')';}
+function setValues(obj){for(const k of Object.keys(sliders)){if(obj[k]!==undefined)sliders[k].value=obj[k];}update();}
+Object.values(sliders).forEach(s=>s.addEventListener('input',()=>{playing=false;$('play').textContent='▶ 4차원 동시 회전 재생';update();}));
+$('reset').addEventListener('click',()=>{playing=false;$('play').textContent='▶ 4차원 동시 회전 재생';setValues({xy:0,yz:0,xz:0,xw:0,yw:0,zw:0});});
+$('ex4').addEventListener('click',()=>{playing=false;$('play').textContent='▶ 4차원 동시 회전 재생';setValues({xy:40,yz:48,xz:35,xw:0,yw:0,zw:15});});
+$('ex3').addEventListener('click',()=>{playing=false;$('play').textContent='▶ 4차원 동시 회전 재생';setValues({xy:0,yz:0,xz:0,xw:35,yw:20,zw:30});});
+$('play').addEventListener('click',()=>{playing=!playing;$('play').textContent=playing?'⏸ 일시정지':'▶ 4차원 동시 회전 재생';playT0=null;if(playing)requestAnimationFrame(animate);});
+function animate(t){if(!playing)return;if(playT0===null)playT0=t;const s=(t-playT0)/1000;setValues({yz:(Math.sin(s*.55+.8)*.5+.5)*110,xz:(Math.sin(s*.48+1.7)*.5+.5)*95,xw:(Math.sin(s*.36+.4)*.5+.5)*60,yw:(Math.sin(s*.33+2.0)*.5+.5)*55,zw:(Math.sin(s*.44+2.7)*.5+.5)*70,xy:(Math.sin(s*.42)*.5+.5)*80});requestAnimationFrame(animate);}
+let dragging=false,lastX=0,lastY=0;const right=document.querySelector('.right');right.addEventListener('pointerdown',(e)=>{dragging=true;lastX=e.clientX;lastY=e.clientY;right.setPointerCapture(e.pointerId);});right.addEventListener('pointermove',(e)=>{if(!dragging)return;const dx=e.clientX-lastX,dy=e.clientY-lastY;lastX=e.clientX;lastY=e.clientY;yaw+=dx*.006;pitch+=dy*.006;pitch=Math.max(-1.1,Math.min(1.1,pitch));update();});right.addEventListener('pointerup',()=>{dragging=false;});right.addEventListener('wheel',(e)=>{e.preventDefault();zoom*=e.deltaY>0?.92:1.08;zoom=Math.max(.55,Math.min(1.8,zoom));update();},{passive:false});
+setValues({xy:0,yz:0,xz:0,xw:0,yw:0,zw:0});
+</script>
+</body>
+</html>

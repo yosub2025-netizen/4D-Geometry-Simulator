@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4차원 테서렉트 투영 변환 시뮬레이터</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Pretendard', 'Noto Sans KR', sans-serif; background-color: #020617; color: #f8fafc; margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        
+        #canvas-container { flex-grow: 1; position: relative; width: 100%; cursor: move; background: radial-gradient(circle at center, #1e293b 0%, #020617 100%); }
+        canvas { display: block; width: 100%; height: 100%; }
+        
+        .glass-panel { background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        
+        /* 슬라이더 스타일 */
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 24px; width: 24px; border-radius: 50%; background: #f97316; cursor: pointer; border: 3px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.5); margin-top: -8px;}
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; background: #334155; border-radius: 4px; }
+        
+        .btn-play { background: linear-gradient(135deg, #2563eb 0%, #f97316 100%); transition: all 0.2s; }
+        .btn-play:hover { transform: scale(1.05); box-shadow: 0 0 15px rgba(249, 115, 22, 0.5); }
+    </style>
+</head>
+<body>
+
+    <header class="absolute top-0 w-full p-4 md:p-6 z-10 pointer-events-none">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start gap-4">
+            <div>
+                <div class="inline-block px-3 py-1 mb-2 rounded bg-slate-800 text-slate-300 text-xs font-bold border border-slate-600 shadow-lg">Interactive 4D Projection Engine</div>
+                <h1 class="text-2xl md:text-4xl font-black text-white drop-shadow-lg">테서렉트 투영 변환 시뮬레이터</h1>
+                <p class="text-slate-300 text-sm md:text-base mt-2 max-w-2xl drop-shadow">
+                    4차원 하이퍼큐브의 두 가지 핵심 투영법인 <strong>'원근 투영(Perspective)'</strong>과 <strong>'평행 투영(Parallel)'</strong> 사이를 연속적으로 변환(Morphing)합니다.<br>
+                    <span class="text-xs opacity-90 mt-1 block text-yellow-400 font-medium">💡 화면을 마우스나 터치로 드래그하면, 구조물 전체를 360도로 돌려보며 관찰할 수 있습니다!</span>
+                </p>
+            </div>
+            
+            <!-- 색상 범례 -->
+            <div class="glass-panel p-4 rounded-xl text-sm font-medium space-y-3 pointer-events-auto">
+                <div class="font-bold text-slate-200 border-b border-slate-600 pb-2 mb-2">투영체 구성 요소</div>
+                <div class="flex items-center">
+                    <span class="w-4 h-4 rounded bg-[#3b82f6] opacity-80 mr-3 shadow-[0_0_8px_#3b82f6] border border-blue-400"></span> 
+                    외부/기준 큐브 면 (W=1)
+                </div>
+                <div class="flex items-center">
+                    <span class="w-4 h-4 rounded bg-[#f97316] opacity-80 mr-3 shadow-[0_0_8px_#f97316] border border-orange-400"></span> 
+                    내부/이동 큐브 면 (W=-1)
+                </div>
+                <div class="flex items-center">
+                    <span class="w-4 h-4 rounded bg-slate-400 opacity-60 mr-3 border border-slate-500"></span> 
+                    4차원 연결 기둥 면
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 렌더링 캔버스 -->
+    <div id="canvas-container">
+        <canvas id="morph-canvas"></canvas>
+    </div>
+
+    <!-- 하단 컨트롤 패널 -->
+    <footer class="absolute bottom-6 w-full px-4 z-10 pointer-events-none">
+        <div class="max-w-5xl mx-auto glass-panel p-5 md:p-6 rounded-2xl pointer-events-auto border border-slate-600">
+            <div class="flex flex-col md:flex-row gap-6 items-center">
+                <!-- 재생 버튼 -->
+                <button id="btn-play" class="btn-play text-white rounded-full w-16 h-16 flex items-center justify-center flex-shrink-0 focus:outline-none shadow-lg">
+                    <svg id="icon-play" class="w-8 h-8 ml-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg>
+                    <svg id="icon-pause" class="w-8 h-8 hidden" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+                </button>
+
+                <div class="flex-grow w-full">
+                    <div class="flex justify-between items-end mb-2">
+                        <label class="text-sm font-bold text-slate-200">변환 진행률 (Morph Ratio)</label>
+                        <div class="text-2xl font-black text-orange-400"><span id="display-ratio">0</span>%</div>
+                    </div>
+                    <input type="range" id="slider-morph" min="0" max="100" step="0.5" value="0">
+                    <div class="flex justify-between text-xs text-slate-400 mt-2 font-medium">
+                        <span class="text-blue-300">원근 투영 (Perspective)</span>
+                        <span class="text-orange-300">평행 투영 (Parallel)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const canvas = document.getElementById('morph-canvas');
+        const ctx = canvas.getContext('2d', { alpha: false });
+        
+        let width, height, cx, cy;
+        let scalePersp, scalePara;
+
+        function resize() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            width = rect.width;
+            height = rect.height;
+            
+            // [수정1] 하단 UI와 겹치지 않게 중심점을 살짝 위로 올림
+            cx = width / 2;
+            cy = height / 2 - 30; 
+            
+            // [수정1] 도형이 화면에 너무 꽉 차지 않도록 전체 크기 배율 감소
+            let minDim = Math.min(width, height);
+            scalePersp = minDim * 0.30; // 기존 0.40에서 감소
+            scalePara = minDim * 0.20;  // 기존 0.25에서 감소
+        }
+        window.addEventListener('resize', resize);
+
+        // 1. 테서렉트 정점 생성 (16개)
+        const vertices = [];
+        for (let i = 0; i < 16; i++) {
+            vertices.push({
+                x: (i & 1) ? 1 : -1,
+                y: (i & 2) ? 1 : -1,
+                z: (i & 4) ? 1 : -1,
+                w: (i & 8) ? 1 : -1
+            });
+        }
+
+        // 2. 테서렉트 24개의 면(Face) 생성
+        const faces = [];
+        const dims = [1, 2, 4, 8];
+        for (let d1 = 0; d1 < 3; d1++) {
+            for (let d2 = d1 + 1; d2 < 4; d2++) {
+                let b1 = dims[d1], b2 = dims[d2];
+                let fixed = dims.filter(d => d !== b1 && d !== b2);
+                
+                for (let v1 = 0; v1 < 2; v1++) {
+                    for (let v2 = 0; v2 < 2; v2++) {
+                        let base = (v1 ? fixed[0] : 0) + (v2 ? fixed[1] : 0);
+                        let p0 = base, p1 = base + b1, p2 = base + b1 + b2, p3 = base + b2;
+                        
+                        let type = 'silver'; 
+                        if (b1 !== 8 && b2 !== 8) {
+                            if (base & 8) type = 'blue'; 
+                            else type = 'orange';        
+                        }
+                        faces.push({ pts: [p0, p1, p2, p3], type: type });
+                    }
+                }
+            }
+        }
+
+        // 마우스 상호작용 변수
+        let userRotX = 0;
+        let userRotY = 0;
+        let isDragging = false;
+        let lastX, lastY;
+
+        canvas.addEventListener('mousedown', e => { isDragging = true; lastX = e.clientX; lastY = e.clientY; });
+        window.addEventListener('mouseup', () => { isDragging = false; });
+        window.addEventListener('mousemove', e => {
+            if (isDragging) {
+                let dx = e.clientX - lastX;
+                let dy = e.clientY - lastY;
+                userRotY += dx * 0.01;
+                userRotX += dy * 0.01;
+                lastX = e.clientX;
+                lastY = e.clientY;
+            }
+        });
+
+        // 터치 지원
+        canvas.addEventListener('touchstart', e => { isDragging = true; lastX = e.touches[0].clientX; lastY = e.touches[0].clientY; });
+        window.addEventListener('touchend', () => { isDragging = false; });
+        window.addEventListener('touchmove', e => {
+            if (isDragging) {
+                let dx = e.touches[0].clientX - lastX;
+                let dy = e.touches[0].clientY - lastY;
+                userRotY += dx * 0.01;
+                userRotX += dy * 0.01;
+                lastX = e.touches[0].clientX;
+                lastY = e.touches[0].clientY;
+            }
+        });
+
+        // 애니메이션 상태 관리
+        const btnPlay = document.getElementById('btn-play');
+        const iconPlay = document.getElementById('icon-play');
+        const iconPause = document.getElementById('icon-pause');
+        const slider = document.getElementById('slider-morph');
+        const displayRatio = document.getElementById('display-ratio');
+        
+        let isPlaying = false;
+        let morphValue = 0;
+        let morphDirection = 1;
+
+        function togglePlay() {
+            isPlaying = !isPlaying;
+            if (isPlaying) {
+                iconPlay.classList.add('hidden');
+                iconPause.classList.remove('hidden');
+                if (morphValue >= 100) morphDirection = -1;
+                else if (morphValue <= 0) morphDirection = 1;
+            } else {
+                iconPlay.classList.remove('hidden');
+                iconPause.classList.add('hidden');
+            }
+        }
+
+        btnPlay.addEventListener('click', togglePlay);
+
+        slider.addEventListener('input', (e) => {
+            morphValue = parseFloat(e.target.value);
+            displayRatio.innerText = morphValue.toFixed(1);
+            if (isPlaying) togglePlay(); 
+        });
+
+        // [수정2] 수학적 회전 분리: 기본 베이스 앵글
+        function rotate3D_base(x, y, z) {
+            let rotX = 0.60;  
+            let rotY = -0.45; 
+            let rotZ = 0.28;  
+            
+            let y1 = y * Math.cos(rotX) - z * Math.sin(rotX);
+            let z1 = y * Math.sin(rotX) + z * Math.cos(rotX);
+            
+            let x2 = x * Math.cos(rotY) - z1 * Math.sin(rotY);
+            let z2 = x * Math.sin(rotY) + z1 * Math.cos(rotY);
+            
+            let x3 = x2 * Math.cos(rotZ) - y1 * Math.sin(rotZ);
+            let y3 = x2 * Math.sin(rotZ) + y1 * Math.cos(rotZ);
+            
+            return { x: x3, y: y3, z: z2 };
+        }
+
+        // [수정2] 수학적 회전 분리: 사용자 마우스 회전 (도형 전체를 돌리기 위함)
+        function rotate3D_user(x, y, z) {
+            let x1 = x * Math.cos(userRotY) - z * Math.sin(userRotY);
+            let z1 = x * Math.sin(userRotY) + z * Math.cos(userRotY);
+            
+            let y2 = y * Math.cos(userRotX) - z1 * Math.sin(userRotX);
+            let z2 = y * Math.sin(userRotX) + z1 * Math.cos(userRotX);
+            
+            return { x: x1, y: y2, z: z2 };
+        }
+
+        // 메인 애니메이션 루프
+        function draw() {
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(0, 0, width, height);
+
+            let t = morphValue / 100; // 0.0 ~ 1.0
+
+            const camW = 2.4; 
+            // [수정3] 주황색 큐브 돌출 거리(Shift)를 기존(-1.4)의 절반(-0.7)으로 축소
+            const shiftX = -0.7; 
+            const shiftY = -0.7; 
+            const shiftZ = -0.75; 
+
+            // 1단계: 모든 정점의 투영 좌표 및 깊이(Z) 계산
+            const projected = vertices.map(v => {
+                // 1. 기본 최적 뷰 앵글 회전
+                let base = rotate3D_base(v.x, v.y, v.z);
+
+                // 2. 원근 투영 (t=0)
+                let wFactor = 1 / (camW - v.w);
+                let px_persp = base.x * wFactor;
+                let py_persp = base.y * wFactor;
+                let pz_persp = base.z * wFactor;
+
+                // 3. 평행 투영 (t=1)
+                // W값에 따른 이동. 주황색(W=-1)은 +0.7씩 이동하게 됨
+                let px_para = base.x + v.w * shiftX;
+                let py_para = base.y + v.w * shiftY;
+                let pz_para = base.z + v.w * shiftZ; 
+
+                // 4. 선형 보간 (Morphing)
+                let px_morphed = px_persp * (1 - t) + px_para * t;
+                let py_morphed = py_persp * (1 - t) + py_para * t;
+                let pz_morphed = pz_persp * (1 - t) + pz_para * t;
+
+                // 5. 사용자 회전 적용 (오프셋까지 포함된 '구조물 전체'가 돌아감)
+                let final3D = rotate3D_user(px_morphed, py_morphed, pz_morphed);
+
+                // 6. 스케일 적용하여 화면 좌표로 변환
+                let currentScale = scalePersp * (1 - t) + scalePara * t;
+                return { 
+                    x: final3D.x * currentScale + cx, 
+                    y: final3D.y * currentScale + cy, 
+                    z: final3D.z 
+                };
+            });
+
+            // 2단계: 24개 면(Faces)의 평균 깊이 계산 및 Z-Sorting
+            const drawableFaces = faces.map(face => {
+                let pts = face.pts.map(idx => projected[idx]);
+                let avgZ = (pts[0].z + pts[1].z + pts[2].z + pts[3].z) / 4;
+                return { pts, avgZ, type: face.type };
+            });
+
+            // 멀리 있는 면부터 그리기 위해 오름차순 정렬
+            drawableFaces.sort((a, b) => a.avgZ - b.avgZ);
+
+            // 3단계: 정렬된 순서대로 면(Fill)과 테두리(Stroke) 렌더링
+            drawableFaces.forEach(face => {
+                ctx.beginPath();
+                ctx.moveTo(face.pts[0].x, face.pts[0].y);
+                ctx.lineTo(face.pts[1].x, face.pts[1].y);
+                ctx.lineTo(face.pts[2].x, face.pts[2].y);
+                ctx.lineTo(face.pts[3].x, face.pts[3].y);
+                ctx.closePath();
+
+                if (face.type === 'blue') {
+                    ctx.fillStyle = 'rgba(59, 130, 246, 0.45)';
+                    ctx.strokeStyle = 'rgba(59, 130, 246, 1)';
+                } else if (face.type === 'orange') {
+                    ctx.fillStyle = 'rgba(249, 115, 22, 0.55)';
+                    ctx.strokeStyle = 'rgba(249, 115, 22, 1)';
+                } else {
+                    ctx.fillStyle = 'rgba(148, 163, 184, 0.25)';
+                    ctx.strokeStyle = 'rgba(148, 163, 184, 0.8)';
+                }
+                
+                ctx.lineWidth = 2;
+                ctx.fill();
+                ctx.stroke();
+            });
+
+            // 4단계: 꼭짓점(Vertex) 마커 부착
+            projected.forEach((p, i) => {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+                ctx.fillStyle = (vertices[i].w === 1) ? '#60a5fa' : '#fdba74'; 
+                ctx.fill();
+            });
+        }
+
+        // 애니메이션 루프 업데이트
+        function update() {
+            if (isPlaying) {
+                morphValue += 0.4 * morphDirection;
+                
+                if (morphValue > 100) {
+                    morphValue = 100;
+                    morphDirection = -1;
+                } else if (morphValue < 0) {
+                    morphValue = 0;
+                    morphDirection = 1;
+                    togglePlay(); 
+                }
+
+                slider.value = morphValue;
+                displayRatio.innerText = morphValue.toFixed(1);
+            }
+            
+            draw();
+            requestAnimationFrame(update);
+        }
+
+        // 초기화 및 실행
+        resize();
+        update();
+
+    </script>
+</body>
+</html>

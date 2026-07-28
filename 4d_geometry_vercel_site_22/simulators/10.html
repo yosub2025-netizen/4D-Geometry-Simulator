@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>4차원 도형(하이퍼큐브)의 4차원 회전 시뮬레이터</title>
+<style>
+:root{
+  --bg:#0f172a; --deep:#020617; --panel:#111827; --line:#334155; --line2:#475569;
+  --text:#f8fafc; --muted:#9fb0c8; --red:#ff4a4a; --blue:#3b82f6; --green:#67d76b; --purple:#a855f7; --purple2:#7c3aed; --cyan:#0ea5e9;
+}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:Pretendard,"Noto Sans KR","Malgun Gothic",Arial,sans-serif}
+body{display:flex;flex-direction:column}
+header{height:64px;flex-shrink:0;background:#0b1220;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:center;position:relative}
+header h1{margin:0;font-size:30px;line-height:1;font-weight:900;letter-spacing:-0.03em}
+.badge{position:absolute;left:14px;top:14px;padding:8px 16px;border-radius:999px;background:#241a4b;border:1px solid #7c3aed;color:#ded6ff;font-size:14px;font-weight:800}
+main{flex:1;display:flex;min-height:0}
+.left{width:41.5%;min-width:560px;max-width:820px;overflow:hidden;background:#0f172a;border-right:1px solid var(--line);padding:10px;display:flex;flex-direction:column;gap:8px}
+.right{flex:1;position:relative;background:radial-gradient(circle at 48% 45%,#192537 0%,#0a1120 54%,#020617 100%);overflow:hidden}
+.card{background:linear-gradient(180deg,rgba(17,24,39,.94),rgba(10,18,32,.94));border:1px solid var(--line2);border-radius:16px;box-shadow:0 10px 28px rgba(0,0,0,.22)}
+.formulaCard{height:156px;padding:14px 18px;text-align:center;display:flex;flex-direction:column;justify-content:center}
+.formulaTitle{font-size:22px;font-weight:900;margin-bottom:10px}
+.math{font-family:Cambria,Georgia,"Times New Roman",serif;font-style:italic;font-weight:700}
+.formula{font-size:30px;line-height:1.06;letter-spacing:.03em;white-space:nowrap}
+.sub{font-size:.55em;vertical-align:-0.34em}.sup{font-size:.56em;vertical-align:.62em}
+.formulaHint{font-size:13px;color:var(--muted);margin-top:10px;line-height:1.4}
+.barsCard{height:318px;padding:12px 14px 10px;position:relative}
+.sectionTitle{font-size:21px;font-weight:900;margin:0 0 6px}
+.legend{position:absolute;right:18px;top:18px;color:#d2dae5;font-size:13px;font-weight:800}
+.legend span{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.bars{height:245px;display:grid;grid-template-columns:repeat(4,1fr);gap:18px;align-items:end;padding:0 12px}
+.barGroup{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end}
+.barLabel{height:46px;display:flex;align-items:center;justify-content:center;gap:6px;color:white;text-shadow:0 2px 10px rgba(0,0,0,.55);white-space:nowrap;min-width:max-content}
+.barSymbol{font-family:Cambria,Georgia,"Times New Roman",serif;font-style:italic;font-weight:700;font-size:31px;letter-spacing:.03em;line-height:1;display:inline-block;white-space:nowrap}
+.smallTag{font-family:Pretendard,"Noto Sans KR","Malgun Gothic",Arial,sans-serif;font-style:normal;font-size:14px;font-weight:900;color:#d1b4ff;white-space:nowrap}
+.barBox{height:158px;width:68px;border-radius:13px;background:#020617;border:2px solid #657284;overflow:hidden;position:relative;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),0 10px 18px rgba(0,0,0,.25)}
+.barBox.hidden{border-color:#7c3aed;box-shadow:0 0 0 3px rgba(124,58,237,.18), inset 0 0 0 1px rgba(255,255,255,.08)}
+.fillRed,.fillBlue,.fillGreen,.fillPurple{position:absolute;left:0;width:100%;transition:height .10s linear,bottom .10s linear}
+.fillRed{background-image:repeating-linear-gradient(to top,var(--red) 0 6px,transparent 6px 9px)}
+.fillBlue{background-image:repeating-linear-gradient(to top,var(--blue) 0 6px,transparent 6px 9px)}
+.fillGreen{background-image:repeating-linear-gradient(to top,var(--green) 0 6px,transparent 6px 9px)}
+.fillPurple{background-image:repeating-linear-gradient(to top,var(--purple) 0 6px,transparent 6px 9px)}
+.valueQuad{height:42px;margin-top:5px;font-size:10.5px;font-weight:900;line-height:1.04;text-align:center}
+.valueQuad .r{color:var(--red)} .valueQuad .b{color:var(--blue)} .valueQuad .g{color:var(--green)} .valueQuad .p{color:var(--purple)}
+.controlsCard{flex:1;min-height:255px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.sliderGrid{display:grid;grid-template-columns:1fr 1fr;gap:7px;flex:1}
+.sliderBox{min-height:58px;background:#111c2d;border:1px solid #28384e;border-radius:10px;padding:7px 10px}
+.sliderBox.purple{background:#26184a;border-color:#713bbd}
+.sliderHead{display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:900;margin-bottom:6px}
+input[type=range]{width:100%;margin:0;height:14px;accent-color:var(--purple2);cursor:pointer}
+.sliderBox:not(.purple) input[type=range]{accent-color:#a7b4c8}
+.buttons{height:50px;display:flex;gap:10px}
+button{border:0;border-radius:999px;color:white;font-weight:900;font-size:14px;cursor:pointer;box-shadow:0 7px 18px rgba(0,0,0,.28);transition:transform .08s,filter .08s}
+button:active{transform:scale(.97)}
+.play{flex:1.55;background:linear-gradient(135deg,#6557ff,#5138e5)}
+.ex4{flex:.44;background:linear-gradient(135deg,#9a2ee9,#6d28d9)}
+.ex3{flex:.44;background:linear-gradient(135deg,#05b7cf,#07849c)}
+.reset{flex:.62;background:#425167;border:1px solid #5b6c82}
+#stage{position:absolute;inset:0;width:100%;height:100%}
+.coordWidget{position:absolute;left:22px;top:22px;width:162px;height:162px;border-radius:14px;background:rgba(21,32,50,.82);border:1px solid #526177;box-shadow:0 10px 24px rgba(0,0,0,.28);display:flex;align-items:center;justify-content:center;z-index:3;backdrop-filter:blur(8px)}
+.mouseNote{position:absolute;right:22px;top:22px;z-index:3;background:rgba(15,23,42,.82);border:1px solid #526177;border-radius:12px;padding:10px 16px;color:#d7dee8;font-size:14px;font-weight:800}
+.infoGrid{position:absolute;left:24px;right:24px;bottom:24px;display:grid;grid-template-columns:1.08fr 1fr 1.08fr 1.08fr;gap:14px;z-index:3}
+.infoBox{background:rgba(15,23,42,.84);border:1px solid #526177;border-radius:11px;padding:11px 14px;min-height:92px;backdrop-filter:blur(8px)}
+.infoBox h3{margin:0 0 6px;font-size:15px;color:#f8fafc}
+.infoBox div{font-size:14px;color:#d6dde8;line-height:1.45}
+.infoFormula{font-family:Cambria,Georgia,"Times New Roman",serif;font-style:italic;font-size:21px;font-weight:700;color:#f8fafc;white-space:nowrap}
+.mono{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
+.compLine{display:flex;align-items:center;gap:8px;font-size:14px;line-height:1.45}
+.dot{display:inline-block;width:12px;height:12px;border-radius:3px;flex:0 0 auto}
+.divider{position:absolute;left:0;top:0;bottom:0;width:9px;background:#e5e7eb;opacity:.85;z-index:4;box-shadow:0 0 0 1px rgba(0,0,0,.1)}
+.divider:after{content:"";position:absolute;left:2px;top:50%;width:5px;height:160px;transform:translateY(-50%);border-radius:8px;background:#9ca3af}
+@media(max-width:1260px){
+  html,body{overflow:auto}
+  main{flex-direction:column}
+  .left{width:100%;min-width:0;max-width:none}
+  .right{height:820px;flex:none}
+  .divider{display:none}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="badge">4D 하이퍼큐브 + 4D 회전 통합판</div>
+  <h1>4차원 도형(하이퍼큐브)의 4차원 회전 시뮬레이터</h1>
+</header>
+
+<main>
+  <section class="left">
+    <div class="card formulaCard">
+      <div class="formulaTitle">차원 성분 보존 법칙</div>
+      <div class="formula math">
+        |v⃗|<span class="sup">2</span> = v<span class="sub">x</span><span class="sup">2</span> + v<span class="sub">y</span><span class="sup">2</span> + v<span class="sub">z</span><span class="sup">2</span> + v<span class="sub">w</span><span class="sup">2</span> = 1
+      </div>
+      <div class="formulaHint">하이퍼큐브의 4개 축 방향 성분이 회전해도 전체 길이는 보존됩니다.<br>표현 그림이 바뀌어도 성분 보존 개념은 동일합니다.</div>
+    </div>
+
+    <div class="card barsCard">
+      <h2 class="sectionTitle">각 축 성분의 제곱 분포</h2>
+      <div class="legend">
+        <span style="background:var(--red)"></span>x 성분 (v<span class="sub">x</span>)&nbsp;
+        <span style="background:var(--blue)"></span>y 성분 (v<span class="sub">y</span>)&nbsp;
+        <span style="background:var(--green)"></span>z 성분 (v<span class="sub">z</span>)&nbsp;
+        <span style="background:var(--purple)"></span>w 성분 (v<span class="sub">w</span>)
+      </div>
+      <div class="bars">
+        <div class="barGroup">
+          <div class="barLabel"><span class="barSymbol">v<span class="sub">x</span><span class="sup">2</span></span></div>
+          <div class="barBox"><div id="xR" class="fillRed"></div><div id="xB" class="fillBlue"></div><div id="xG" class="fillGreen"></div><div id="xP" class="fillPurple"></div></div>
+          <div class="valueQuad"><div id="xRT" class="r">0%</div><div id="xBT" class="b">0%</div><div id="xGT" class="g">0%</div><div id="xPT" class="p">0%</div></div>
+        </div>
+        <div class="barGroup">
+          <div class="barLabel"><span class="barSymbol">v<span class="sub">y</span><span class="sup">2</span></span></div>
+          <div class="barBox"><div id="yR" class="fillRed"></div><div id="yB" class="fillBlue"></div><div id="yG" class="fillGreen"></div><div id="yP" class="fillPurple"></div></div>
+          <div class="valueQuad"><div id="yRT" class="r">0%</div><div id="yBT" class="b">0%</div><div id="yGT" class="g">0%</div><div id="yPT" class="p">0%</div></div>
+        </div>
+        <div class="barGroup">
+          <div class="barLabel"><span class="barSymbol">v<span class="sub">z</span><span class="sup">2</span></span><span class="smallTag">(Hidden)</span></div>
+          <div class="barBox hidden"><div id="zR" class="fillRed"></div><div id="zB" class="fillBlue"></div><div id="zG" class="fillGreen"></div><div id="zP" class="fillPurple"></div></div>
+          <div class="valueQuad"><div id="zRT" class="r">0%</div><div id="zBT" class="b">0%</div><div id="zGT" class="g">0%</div><div id="zPT" class="p">0%</div></div>
+        </div>
+        <div class="barGroup">
+          <div class="barLabel"><span class="barSymbol">v<span class="sub">w</span><span class="sup">2</span></span><span class="smallTag">(4D)</span></div>
+          <div class="barBox hidden"><div id="wR" class="fillRed"></div><div id="wB" class="fillBlue"></div><div id="wG" class="fillGreen"></div><div id="wP" class="fillPurple"></div></div>
+          <div class="valueQuad"><div id="wRT" class="r">0%</div><div id="wBT" class="b">0%</div><div id="wGT" class="g">0%</div><div id="wPT" class="p">0%</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card controlsCard">
+      <div class="sliderGrid">
+        <div class="sliderBox">
+          <div class="sliderHead"><span>XY 평면에 대한 회전</span><span id="xyVal">0°</span></div>
+          <input id="xy" type="range" min="-180" max="180" step="0.1" value="28">
+        </div>
+        <div class="sliderBox purple">
+          <div class="sliderHead"><span>XW 평면에 대한 회전</span><span id="xwVal">0°</span></div>
+          <input id="xw" type="range" min="-180" max="180" step="0.1" value="-34">
+        </div>
+        <div class="sliderBox">
+          <div class="sliderHead"><span>YZ 평면에 대한 회전</span><span id="yzVal">0°</span></div>
+          <input id="yz" type="range" min="-180" max="180" step="0.1" value="-15">
+        </div>
+        <div class="sliderBox purple">
+          <div class="sliderHead"><span>YW 평면에 대한 회전</span><span id="ywVal">0°</span></div>
+          <input id="yw" type="range" min="-180" max="180" step="0.1" value="42">
+        </div>
+        <div class="sliderBox">
+          <div class="sliderHead"><span>XZ 평면에 대한 회전</span><span id="xzVal">0°</span></div>
+          <input id="xz" type="range" min="-180" max="180" step="0.1" value="63">
+        </div>
+        <div class="sliderBox purple">
+          <div class="sliderHead"><span>ZW 평면에 대한 회전</span><span id="zwVal">0°</span></div>
+          <input id="zw" type="range" min="-180" max="180" step="0.1" value="-21">
+        </div>
+      </div>
+      <div class="buttons">
+        <button id="play" class="play">4차원 동시 회전 재생</button>
+        <button id="ex4" class="ex4">4D 예시</button>
+        <button id="ex3" class="ex3">3D 예시</button>
+        <button id="reset" class="reset">처음 위치로</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="right">
+    <div class="divider"></div>
+    <div class="coordWidget card">
+      <svg width="120" height="120" viewBox="0 0 120 120">
+        <text x="60" y="16" fill="#ffffff" font-size="14" font-weight="900" text-anchor="middle">4차원 좌표계</text>
+        <circle cx="56" cy="58" r="4" fill="#f8fafc"/>
+        <line x1="56" y1="58" x2="56" y2="16" stroke="#94a3b8" stroke-width="3" marker-end="url(#axisArrowMini)"/>
+        <line x1="56" y1="58" x2="100" y2="58" stroke="#94a3b8" stroke-width="3" marker-end="url(#axisArrowMini)"/>
+        <line x1="56" y1="58" x2="22" y2="92" stroke="#94a3b8" stroke-width="3" marker-end="url(#axisArrowMini)"/>
+        <line x1="56" y1="58" x2="94" y2="92" stroke="#a855f7" stroke-width="3" marker-end="url(#axisArrowMiniPurple)"/>
+        <defs>
+          <marker id="axisArrowMini" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3 z" fill="#94a3b8"/></marker>
+          <marker id="axisArrowMiniPurple" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3 z" fill="#a855f7"/></marker>
+        </defs>
+        <text x="57" y="10" fill="#cbd5e1" font-size="12" font-weight="900">Y</text>
+        <text x="105" y="63" fill="#cbd5e1" font-size="12" font-weight="900">X</text>
+        <text x="10" y="102" fill="#cbd5e1" font-size="12" font-weight="900">Z</text>
+        <text x="96" y="112" fill="#a855f7" font-size="12" font-weight="900">W</text>
+      </svg>
+    </div>
+    <div class="mouseNote">마우스로 드래그: 보는 방향 회전 · 휠: 확대/축소</div>
+
+    <svg id="stage" viewBox="0 0 1100 760" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <marker id="axisArrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3 z" fill="#94a3b8"/></marker>
+        <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="2.8" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <linearGradient id="faceGradOuter" x1="0" x2="1" y1="0" y2="1">
+          <stop offset="0%" stop-color="#cbd5e1" stop-opacity=".18"/>
+          <stop offset="100%" stop-color="#94a3b8" stop-opacity=".06"/>
+        </linearGradient>
+        <linearGradient id="faceGradInner" x1="0" x2="1" y1="0" y2="1">
+          <stop offset="0%" stop-color="#e9d5ff" stop-opacity=".14"/>
+          <stop offset="100%" stop-color="#a78bfa" stop-opacity=".05"/>
+        </linearGradient>
+      </defs>
+      <g id="grid" stroke="#233044" stroke-width="1" opacity=".70"></g>
+      <g id="axes" stroke-width="3.2" stroke-linecap="round" opacity=".82"></g>
+      <g id="cubeFaces"></g>
+      <g id="cubeEdges" filter="url(#glow)"></g>
+      <g id="nodes"></g>
+    </svg>
+
+    <div class="infoGrid">
+      <div class="infoBox">
+        <h3>4차원 투영 정보</h3>
+        <div>현재 최대 |v| = <span id="normText" class="mono">1.0000</span><br>투영 방식: 정규직교 투영<br>(4D → 3D → 2D)</div>
+      </div>
+      <div class="infoBox">
+        <h3>보존 확인</h3>
+        <div class="infoFormula">v<span class="sub">x</span><span class="sup">2</span> + v<span class="sub">y</span><span class="sup">2</span> + v<span class="sub">z</span><span class="sup">2</span> + v<span class="sub">w</span><span class="sup">2</span> = 1</div>
+        <div id="normCheck" class="mono" style="margin-top:8px">1.0000 (상수)</div>
+      </div>
+      <div class="infoBox">
+        <h3>각 성분 값 (실수)</h3>
+        <div class="compLine"><span class="dot" style="background:var(--red)"></span>v<span class="sub">x</span> = <span id="vxText" class="mono"></span></div>
+        <div class="compLine"><span class="dot" style="background:var(--blue)"></span>v<span class="sub">y</span> = <span id="vyText" class="mono"></span></div>
+        <div class="compLine"><span class="dot" style="background:var(--green)"></span>v<span class="sub">z</span> = <span id="vzText" class="mono"></span></div>
+        <div class="compLine"><span class="dot" style="background:var(--purple)"></span>v<span class="sub">w</span> = <span id="vwText" class="mono"></span></div>
+      </div>
+      <div class="infoBox">
+        <h3>각 성분의 제곱 합</h3>
+        <div class="infoFormula">v<span class="sub">x</span><span class="sup">2</span> + v<span class="sub">y</span><span class="sup">2</span> + v<span class="sub">z</span><span class="sup">2</span> + v<span class="sub">w</span><span class="sup">2</span> = 1</div>
+        <div id="sumSquares" class="mono" style="margin-top:8px">1.0000</div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const sliders = {xy:$('xy'), yz:$('yz'), xz:$('xz'), xw:$('xw'), yw:$('yw'), zw:$('zw')};
+const vals = {xy:$('xyVal'), yz:$('yzVal'), xz:$('xzVal'), xw:$('xwVal'), yw:$('ywVal'), zw:$('zwVal')};
+let yaw=-0.58, pitch=0.18, zoom=1.0, playing=false, playElapsed=0, playStartTimestamp=null;
+const initialState = {xy:0, yz:0, xz:0, xw:0, yw:0, zw:0};
+const startState = {xy:28, yz:-15, xz:63, xw:-34, yw:42, zw:-21};
+
+const baseVerts = [];
+for(const sx of [-1,1]) for(const sy of [-1,1]) for(const sz of [-1,1]) for(const sw of [-1,1]) baseVerts.push([sx,sy,sz,sw]);
+const edges = [];
+for(let i=0;i<baseVerts.length;i++){
+  for(let j=i+1;j<baseVerts.length;j++){
+    let diff=0, dim=-1;
+    for(let k=0;k<4;k++){ if(baseVerts[i][k]!==baseVerts[j][k]){ diff++; dim=k; } }
+    if(diff===1) edges.push([i,j,dim]);
+  }
+}
+function vid(x,y,z,w){ return baseVerts.findIndex(v=>v[0]===x && v[1]===y && v[2]===z && v[3]===w); }
+const cubeFaces = [];
+for(const w of [-1,1]){
+  for(const x of [-1,1]) cubeFaces.push([vid(x,-1,-1,w), vid(x,1,-1,w), vid(x,1,1,w), vid(x,-1,1,w), w]);
+  for(const y of [-1,1]) cubeFaces.push([vid(-1,y,-1,w), vid(1,y,-1,w), vid(1,y,1,w), vid(-1,y,1,w), w]);
+  for(const z of [-1,1]) cubeFaces.push([vid(-1,-1,z,w), vid(1,-1,z,w), vid(1,1,z,w), vid(-1,1,z,w), w]);
+}
+function normalize(v){ const n=Math.hypot(...v)||1; return v.map(x=>x/n); }
+function deg2rad(d){ return d*Math.PI/180; }
+function rotatePair(v,i,j,deg){ const t=deg2rad(deg), c=Math.cos(t), s=Math.sin(t); const a=v[i], b=v[j]; v[i]=a*c-b*s; v[j]=a*s+b*c; return v; }
+function transform4(v0){
+  let v=v0.slice();
+  rotatePair(v,2,3,+sliders.xy.value); // XY 평면에 대한 회전: z,w
+  rotatePair(v,0,3,+sliders.yz.value); // YZ 평면에 대한 회전: x,w
+  rotatePair(v,1,3,+sliders.xz.value); // XZ 평면에 대한 회전: y,w
+  rotatePair(v,1,2,+sliders.xw.value); // XW 평면에 대한 회전: y,z
+  rotatePair(v,0,2,+sliders.yw.value); // YW 평면에 대한 회전: x,z
+  rotatePair(v,0,1,+sliders.zw.value); // ZW 평면에 대한 회전: x,y
+  return v;
+}
+function view3(p){
+  const [x,y,z]=p;
+  const cy=Math.cos(yaw), sy=Math.sin(yaw);
+  let x1 = x*cy + z*sy;
+  let z1 = -x*sy + z*cy;
+  const cp=Math.cos(pitch), sp=Math.sin(pitch);
+  let y1 = y*cp - z1*sp;
+  let z2 = y*sp + z1*cp;
+  return [x1,y1,z2];
+}
+function project3(v){
+  const [x,y,z,w]=v;
+  const wScale = 1/(1+0.18*(w+1.2));
+  const x2 = x*wScale, y2 = y*wScale, z2 = z*wScale;
+  const [vx,vy,vz]=view3([x2,y2,z2]);
+  const scale=122*zoom;
+  const f = 9/(9+vz*0.20);
+  return {x:575+vx*scale*f, y:345-vy*scale*f, z:vz, w:w, f};
+}
+function pstr(points){ return points.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '); }
+function centroid(face, pts){ let x=0,y=0,z=0; for(let k=0;k<4;k++){x+=pts[face[k]].x; y+=pts[face[k]].y; z+=pts[face[k]].z;} return {x:x/4,y:y/4,z:z/4}; }
+function drawGridAndAxes(){
+  const grid=$('grid'); grid.innerHTML='';
+  const size=7, yFloor=-2.55;
+  for(let i=-size;i<=size;i++){
+    let a=project3([i,yFloor,-size,0]), b=project3([i,yFloor,size,0]);
+    let l=document.createElementNS("http://www.w3.org/2000/svg",'line');
+    l.setAttribute('x1',a.x); l.setAttribute('y1',a.y); l.setAttribute('x2',b.x); l.setAttribute('y2',b.y); grid.appendChild(l);
+    a=project3([-size,yFloor,i,0]); b=project3([size,yFloor,i,0]);
+    l=document.createElementNS("http://www.w3.org/2000/svg",'line');
+    l.setAttribute('x1',a.x); l.setAttribute('y1',a.y); l.setAttribute('x2',b.x); l.setAttribute('y2',b.y); grid.appendChild(l);
+  }
+  const axes=$('axes'); axes.innerHTML='';
+  const origin=project3([0,0,0,0]);
+  const axisData=[{p:[3.2,0,0,0], label:'X'},{p:[0,3.2,0,0], label:'Y'},{p:[0,0,3.2,0], label:'Z'}];
+  for(const a of axisData){
+    const q=project3(a.p);
+    const line=document.createElementNS("http://www.w3.org/2000/svg",'line');
+    line.setAttribute('x1',origin.x); line.setAttribute('y1',origin.y); line.setAttribute('x2',q.x); line.setAttribute('y2',q.y);
+    line.setAttribute('stroke','#94a3b8'); line.setAttribute('marker-end','url(#axisArrow)'); axes.appendChild(line);
+    const txt=document.createElementNS("http://www.w3.org/2000/svg",'text');
+    txt.setAttribute('x',q.x+10); txt.setAttribute('y',q.y+5); txt.setAttribute('fill','#94a3b8'); txt.setAttribute('font-size','22'); txt.setAttribute('font-weight','900'); txt.textContent=a.label; axes.appendChild(txt);
+  }
+}
+function edgeColor(dim){ return ['#ff4a4a','#3b82f6','#67d76b','#a855f7'][dim]; }
+function updateBars(e1,e2,e3,e4){
+  const basis=[e1,e2,e3,e4];
+  const axes=['x','y','z','w'];
+  for(let a=0;a<4;a++){
+    const id=axes[a];
+    const parts=basis.map(v=>Math.max(0,Math.min(100,v[a]*v[a]*100)));
+    const divs=[$(id+'R'),$(id+'B'),$(id+'G'),$(id+'P')];
+    const txts=[$(id+'RT'),$(id+'BT'),$(id+'GT'),$(id+'PT')];
+    let bottom=0;
+    for(let k=0;k<4;k++){
+      divs[k].style.height=parts[k]+'%';
+      divs[k].style.bottom=bottom+'%';
+      txts[k].textContent=Math.round(parts[k])+'%';
+      bottom += parts[k];
+    }
+  }
+}
+function update(){
+  for(const k of Object.keys(sliders)) vals[k].textContent = Math.round(+sliders[k].value)+'°';
+  drawGridAndAxes();
+  const verts4=baseVerts.map(transform4);
+  const pts=verts4.map(project3);
+  const facesGroup=$('cubeFaces'); facesGroup.innerHTML='';
+  const sortedFaces=cubeFaces.map((f,idx)=>({f,c:centroid(f,pts),w:f[4],idx})).sort((a,b)=>(a.c.z-b.c.z) || (a.idx-b.idx));
+  for(const item of sortedFaces){
+    const poly=document.createElementNS("http://www.w3.org/2000/svg",'polygon');
+    poly.setAttribute('points', pstr(item.f.slice(0,4).map(i=>pts[i])));
+    poly.setAttribute('fill', item.w<0 ? 'url(#faceGradOuter)' : 'url(#faceGradInner)');
+    poly.setAttribute('stroke','rgba(255,255,255,.18)');
+    poly.setAttribute('stroke-width','1.0');
+    facesGroup.appendChild(poly);
+  }
+  const edgeGroup=$('cubeEdges'); edgeGroup.innerHTML='';
+  const sortedEdges=edges.map(([i,j,dim],idx)=>({i,j,dim,z:(pts[i].z+pts[j].z)/2,w:(pts[i].w+pts[j].w)/2,idx})).sort((a,b)=>(a.z-b.z) || (a.idx-b.idx));
+  for(const e of sortedEdges){
+    const l=document.createElementNS("http://www.w3.org/2000/svg",'line');
+    l.setAttribute('x1',pts[e.i].x); l.setAttribute('y1',pts[e.i].y); l.setAttribute('x2',pts[e.j].x); l.setAttribute('y2',pts[e.j].y);
+    l.setAttribute('stroke',edgeColor(e.dim));
+    let sw = e.dim===0?5.0:(e.dim===1?4.4:(e.dim===2?4.2:3.6));
+    if(e.w>0.4) sw*=0.94;
+    l.setAttribute('stroke-width', sw.toFixed(1));
+    l.setAttribute('stroke-linecap','round');
+    if(e.dim===3) l.setAttribute('stroke-opacity','.95');
+    edgeGroup.appendChild(l);
+  }
+  const nodes=$('nodes'); nodes.innerHTML='';
+  const nodeList=pts.map((p,i)=>({p,z:p.z,i})).sort((a,b)=>a.z-b.z);
+  for(const n of nodeList){
+    const c=document.createElementNS("http://www.w3.org/2000/svg",'circle');
+    c.setAttribute('cx',n.p.x); c.setAttribute('cy',n.p.y); c.setAttribute('r',n.p.z>0?5.2:4.6);
+    c.setAttribute('fill','#111827'); c.setAttribute('stroke','#f8fafc'); c.setAttribute('stroke-width','2');
+    nodes.appendChild(c);
+  }
+  const e1=transform4([1,0,0,0]), e2=transform4([0,1,0,0]), e3=transform4([0,0,1,0]), e4=transform4([0,0,0,1]);
+  updateBars(e1,e2,e3,e4);
+  const v = normalize(e1);
+  $('vxText').textContent = v[0].toFixed(4);
+  $('vyText').textContent = v[1].toFixed(4);
+  $('vzText').textContent = v[2].toFixed(4);
+  $('vwText').textContent = v[3].toFixed(4);
+  const sum = v.reduce((s,a)=>s+a*a,0);
+  $('normText').textContent = Math.sqrt(sum).toFixed(4);
+  $('normCheck').textContent = sum.toFixed(4) + ' (상수)';
+  $('sumSquares').textContent = sum.toFixed(4);
+}
+function setValues(obj){ for(const k of Object.keys(sliders)) if(obj[k]!==undefined) sliders[k].value=obj[k]; update(); }
+Object.values(sliders).forEach(s=>s.addEventListener('input',()=>{playing=false; playStartTimestamp=null; playElapsed=0; $('play').textContent='4차원 동시 회전 재생'; update();}));
+$('reset').addEventListener('click',()=>{playing=false; playStartTimestamp=null; playElapsed=0; $('play').textContent='4차원 동시 회전 재생'; setValues(initialState);});
+$('ex4').addEventListener('click',()=>{playing=false; playStartTimestamp=null; playElapsed=0; $('play').textContent='4차원 동시 회전 재생'; setValues(startState);});
+$('ex3').addEventListener('click',()=>{playing=false; playStartTimestamp=null; playElapsed=0; $('play').textContent='4차원 동시 회전 재생'; setValues({xy:0,yz:0,xz:0,xw:35,yw:20,zw:28});});
+$('play').addEventListener('click',()=>{
+  if(playing){
+    playing=false;
+    $('play').textContent='4차원 동시 회전 재생';
+    return;
+  }
+  playing=true;
+  playStartTimestamp=null; // animate 첫 프레임에서 현재 시각을 기준으로 잡되, playElapsed는 유지합니다.
+  $('play').textContent='일시정지';
+  requestAnimationFrame(animate);
+});
+function animate(t){
+  if(!playing) return;
+  if(playStartTimestamp===null) playStartTimestamp=t;
+  const currentElapsed = playElapsed + (t - playStartTimestamp);
+  const s=currentElapsed/1000;
+  setValues({
+    xy:34*Math.sin(s*0.18),
+    yz:22*Math.sin(s*0.13 + 1.20),
+    xz:44*Math.sin(s*0.15 + 0.70),
+    xw:30*Math.sin(s*0.16 + 2.10),
+    yw:38*Math.sin(s*0.12 + 1.00),
+    zw:20*Math.sin(s*0.14 + 0.40)
+  });
+  playElapsed = currentElapsed;        // 현재 화면의 재생 위치를 계속 저장합니다.
+  playStartTimestamp = t;              // 다음 프레임에서는 직전 프레임 이후 시간만 더합니다.
+  requestAnimationFrame(animate);
+}
+let dragging=false,lastX=0,lastY=0;
+const right=document.querySelector('.right');
+right.addEventListener('pointerdown',e=>{dragging=true; lastX=e.clientX; lastY=e.clientY; right.setPointerCapture(e.pointerId);});
+right.addEventListener('pointermove',e=>{ if(!dragging) return; const dx=e.clientX-lastX, dy=e.clientY-lastY; lastX=e.clientX; lastY=e.clientY; yaw += dx*0.006; pitch += dy*0.006; pitch=Math.max(-1.12,Math.min(1.12,pitch)); update(); });
+right.addEventListener('pointerup',()=>dragging=false);
+right.addEventListener('pointercancel',()=>dragging=false);
+right.addEventListener('wheel',e=>{ e.preventDefault(); zoom*=e.deltaY>0 ? 0.92 : 1.08; zoom=Math.max(0.58,Math.min(1.9,zoom)); update(); },{passive:false});
+setValues(startState);
+</script>
+</body>
+</html>

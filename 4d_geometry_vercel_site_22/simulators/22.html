@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>4차원 도형(정600포체)의 4차원 회전 시뮬레이터</title>
+<style>
+:root{
+  --bg:#0f172a; --deep:#020617; --panel:#111827; --line:#334155; --line2:#475569;
+  --text:#f8fafc; --muted:#9fb0c8; --red:#ff4a4a; --blue:#3b82f6; --green:#67d76b; --purple:#a855f7; --purple2:#7c3aed; --cyan:#0ea5e9;
+}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:Pretendard,"Noto Sans KR","Malgun Gothic",Arial,sans-serif}
+body{display:flex;flex-direction:column}
+header{height:64px;flex-shrink:0;background:#0b1220;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:center;position:relative}
+header h1{margin:0;font-size:30px;line-height:1;font-weight:900;letter-spacing:-0.03em}
+.badge{position:absolute;left:14px;top:14px;padding:8px 16px;border-radius:999px;background:#241a4b;border:1px solid #7c3aed;color:#ded6ff;font-size:14px;font-weight:800}
+main{flex:1;display:flex;min-height:0}
+.left{width:380px;min-width:350px;overflow:hidden;background:#0f172a;border-right:1px solid var(--line);padding:24px;display:flex;flex-direction:column;justify-content:center;gap:16px}
+.right{flex:1;position:relative;background:radial-gradient(circle at 48% 45%,#192537 0%,#0a1120 54%,#020617 100%);overflow:hidden}
+.card{background:linear-gradient(180deg,rgba(17,24,39,.94),rgba(10,18,32,.94));border:1px solid var(--line2);border-radius:16px;box-shadow:0 10px 28px rgba(0,0,0,.22)}
+
+.controlsCard{padding:20px;display:flex;flex-direction:column;gap:14px;margin:auto 0;}
+.sectionTitle{font-size:20px;font-weight:900;margin:0 0 10px;text-align:center;color:white;letter-spacing:-0.02em}
+.sliderGrid{display:flex;flex-direction:column;gap:10px}
+.sliderBox{background:#111c2d;border:1px solid #28384e;border-radius:10px;padding:12px 14px}
+.sliderBox.purple{background:#26184a;border-color:#713bbd}
+.sliderHead{display:flex;justify-content:space-between;align-items:center;font-size:15px;font-weight:900;margin-bottom:10px}
+input[type=range]{width:100%;margin:0;height:14px;accent-color:var(--purple2);cursor:pointer}
+.sliderBox:not(.purple) input[type=range]{accent-color:#a7b4c8}
+
+.buttons{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+.btnRow{display:flex;gap:10px;}
+button{border:0;border-radius:999px;color:white;font-weight:900;font-size:15px;padding:12px;cursor:pointer;box-shadow:0 7px 18px rgba(0,0,0,.28);transition:transform .08s,filter .08s}
+button:active{transform:scale(.97)}
+.play{flex:1;background:linear-gradient(135deg,#6557ff,#5138e5)}
+.ex4{flex:1;background:linear-gradient(135deg,#9a2ee9,#6d28d9)}
+.ex3{flex:1;background:linear-gradient(135deg,#05b7cf,#07849c)}
+.reset{flex:1;background:#425167;border:1px solid #5b6c82}
+
+#stage{position:absolute;inset:0;width:100%;height:100%}
+.coordWidget{position:absolute;left:22px;top:22px;width:162px;height:162px;border-radius:14px;background:rgba(21,32,50,.82);border:1px solid #526177;box-shadow:0 10px 24px rgba(0,0,0,.28);display:flex;align-items:center;justify-content:center;z-index:3;backdrop-filter:blur(8px)}
+.mouseNote{position:absolute;right:22px;top:22px;z-index:3;background:rgba(15,23,42,.82);border:1px solid #526177;border-radius:12px;padding:10px 16px;color:#d7dee8;font-size:14px;font-weight:800}
+.divider{position:absolute;left:0;top:0;bottom:0;width:9px;background:#e5e7eb;opacity:.85;z-index:4;box-shadow:0 0 0 1px rgba(0,0,0,.1)}
+.divider:after{content:"";position:absolute;left:2px;top:50%;width:5px;height:160px;transform:translateY(-50%);border-radius:8px;background:#9ca3af}
+@media(max-width:900px){
+  html,body{overflow:auto}
+  main{flex-direction:column}
+  .left{width:100%;min-width:0;border-right:none;border-bottom:1px solid var(--line)}
+  .right{height:820px;flex:none}
+  .divider{display:none}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="badge">4D 정600포체(Hexacosichoron) 시뮬레이터</div>
+  <h1>4차원 도형(정600포체)의 4차원 회전 시뮬레이터</h1>
+</header>
+
+<main>
+  <section class="left">
+    <div class="card controlsCard">
+      <h2 class="sectionTitle">4차원 회전 제어 패널</h2>
+      <div class="sliderGrid">
+        <div class="sliderBox">
+          <div class="sliderHead"><span>XY 평면 회전</span><span id="xyVal">0°</span></div>
+          <input id="xy" type="range" min="-180" max="180" step="0.1" value="28">
+        </div>
+        <div class="sliderBox purple">
+          <div class="sliderHead"><span>XW 평면 회전</span><span id="xwVal">0°</span></div>
+          <input id="xw" type="range" min="-180" max="180" step="0.1" value="-34">
+        </div>
+        <div class="sliderBox">
+          <div class="sliderHead"><span>YZ 평면 회전</span><span id="yzVal">0°</span></div>
+          <input id="yz" type="range" min="-180" max="180" step="0.1" value="-15">
+        </div>
+        <div class="sliderBox purple">
+          <div class="sliderHead"><span>YW 평면 회전</span><span id="ywVal">0°</span></div>
+          <input id="yw" type="range" min="-180" max="180" step="0.1" value="42">
+        </div>
+        <div class="sliderBox">
+          <div class="sliderHead"><span>XZ 평면 회전</span><span id="xzVal">0°</span></div>
+          <input id="xz" type="range" min="-180" max="180" step="0.1" value="63">
+        </div>
+        <div class="sliderBox purple">
+          <div class="sliderHead"><span>ZW 평면 회전</span><span id="zwVal">0°</span></div>
+          <input id="zw" type="range" min="-180" max="180" step="0.1" value="-21">
+        </div>
+      </div>
+      
+      <div class="buttons">
+        <button id="play" class="play">4차원 동시 회전 재생</button>
+        
+        <div class="sliderBox" style="background:#1e293b; border-color:#334155;">
+          <div class="sliderHead"><span>자동 재생 속도</span><span id="speedVal">1.0x</span></div>
+          <input id="speedSlider" type="range" min="0.5" max="5" step="0.1" value="1.0">
+        </div>
+
+        <div class="btnRow">
+          <button id="ex4" class="ex4">4D 예시</button>
+          <button id="ex3" class="ex3">3D 예시</button>
+          <button id="reset" class="reset">초기화</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="right">
+    <div class="divider"></div>
+    <div class="coordWidget card">
+      <svg width="120" height="120" viewBox="0 0 120 120">
+        <text x="60" y="16" fill="#ffffff" font-size="14" font-weight="900" text-anchor="middle">4차원 좌표계</text>
+        <circle cx="56" cy="58" r="4" fill="#f8fafc"/>
+        <line x1="56" y1="58" x2="56" y2="16" stroke="#94a3b8" stroke-width="3" marker-end="url(#axisArrowMini)"/>
+        <line x1="56" y1="58" x2="100" y2="58" stroke="#94a3b8" stroke-width="3" marker-end="url(#axisArrowMini)"/>
+        <line x1="56" y1="58" x2="22" y2="92" stroke="#94a3b8" stroke-width="3" marker-end="url(#axisArrowMini)"/>
+        <line x1="56" y1="58" x2="94" y2="92" stroke="#a855f7" stroke-width="3" marker-end="url(#axisArrowMiniPurple)"/>
+        <defs>
+          <marker id="axisArrowMini" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3 z" fill="#94a3b8"/></marker>
+          <marker id="axisArrowMiniPurple" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3 z" fill="#a855f7"/></marker>
+        </defs>
+        <text x="57" y="10" fill="#cbd5e1" font-size="12" font-weight="900">Y</text>
+        <text x="105" y="63" fill="#cbd5e1" font-size="12" font-weight="900">X</text>
+        <text x="10" y="102" fill="#cbd5e1" font-size="12" font-weight="900">Z</text>
+        <text x="96" y="112" fill="#a855f7" font-size="12" font-weight="900">W</text>
+      </svg>
+    </div>
+    <div class="mouseNote">마우스로 드래그: 보는 방향 회전 · 휠: 확대/축소</div>
+
+    <svg id="stage" viewBox="0 0 1100 760" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <marker id="axisArrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3 z" fill="#94a3b8"/></marker>
+        <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="2.5" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <g id="grid" stroke="#233044" stroke-width="1" opacity=".70"></g>
+      <g id="axes" stroke-width="3.2" stroke-linecap="round" opacity=".82"></g>
+      <!-- 정600포체의 720개 모서리 -->
+      <g id="cubeEdges" filter="url(#glow)"></g>
+      <!-- 정600포체의 120개 꼭짓점 -->
+      <g id="nodes"></g>
+    </svg>
+  </section>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const sliders = {xy:$('xy'), yz:$('yz'), xz:$('xz'), xw:$('xw'), yw:$('yw'), zw:$('zw')};
+const vals = {xy:$('xyVal'), yz:$('yzVal'), xz:$('xzVal'), xw:$('xwVal'), yw:$('ywVal'), zw:$('zwVal')};
+let yaw=-0.58, pitch=0.18, zoom=1.0, playing=false;
+let lastTime=null, currentSimTime=0;
+let speedMultiplier = 1.0;
+
+const initialState = {xy:0, yz:0, xz:0, xw:0, yw:0, zw:0};
+const startState = {xy:28, yz:-15, xz:63, xw:-34, yw:42, zw:-21};
+
+// ==========================================
+// 1. 정600포체 (Hexacosichoron) 기하학 생성 엔진
+// ==========================================
+const baseVerts = [];
+const R_scale = 1.6;
+
+// 황금비 상수
+const P = (1 + Math.sqrt(5)) / 2;
+const p1 = P - 1; // 1/P
+
+function getPermutations(arr) {
+    const result = [];
+    function permute(a, l, r) {
+        if (l === r) result.push([...a]);
+        else {
+            for (let i = l; i <= r; i++) {
+                [a[l], a[i]] = [a[i], a[l]];
+                permute(a, l + 1, r);
+                [a[l], a[i]] = [a[i], a[l]];
+            }
+        }
+    }
+    permute(arr, 0, arr.length - 1);
+    return result;
+}
+
+function getEvenPermutations(arr) {
+    const result = [];
+    function permute(a, l, r, isEven) {
+        if (l === r) {
+            if (isEven) result.push([...a]);
+        } else {
+            for (let i = l; i <= r; i++) {
+                [a[l], a[i]] = [a[i], a[l]];
+                let nextEven = (i === l) ? isEven : !isEven;
+                permute(a, l + 1, r, nextEven);
+                [a[l], a[i]] = [a[i], a[l]];
+            }
+        }
+    }
+    permute(arr, 0, arr.length - 1, true);
+    return result;
+}
+
+function getSigns(arr) {
+    const res = [];
+    for (let i = 0; i < 16; i++) {
+        const combo = [];
+        for (let j = 0; j < 4; j++) {
+            const sign = ((i >> j) & 1) ? -1 : 1;
+            combo.push(arr[j] === 0 ? 0 : arr[j] * sign);
+        }
+        res.push(combo);
+    }
+    return res;
+}
+
+const rawVerts = [];
+const seenVerts = new Set();
+function addVerts(perms) {
+    perms.forEach(p => {
+        getSigns(p).forEach(v => {
+            const key = v.map(x => x.toFixed(4)).join(',');
+            if (!seenVerts.has(key)) {
+                seenVerts.add(key);
+                rawVerts.push(v);
+            }
+        });
+    });
+}
+
+// 120개의 꼭짓점 생성 (정8포체 + 정16포체 + 깎인 정24포체의 결합체적 성질)
+addVerts(getPermutations([1, 0, 0, 0]));              // 8개
+addVerts(getPermutations([0.5, 0.5, 0.5, 0.5]));      // 16개
+addVerts(getEvenPermutations([P/2, 0.5, p1/2, 0]));   // 96개
+
+// 스케일 적용
+for(let i=0; i<rawVerts.length; i++){
+    baseVerts.push(rawVerts[i].map(x => x * R_scale));
+}
+
+// 720개의 모서리 연결 탐색 (가장 가까운 거리의 꼭짓점끼리 연결)
+let minD2 = Infinity;
+for (let i = 1; i < baseVerts.length; i++) {
+    let d2 = 0;
+    for(let k=0; k<4; k++) d2 += Math.pow(baseVerts[0][k] - baseVerts[i][k], 2);
+    if (d2 > 1e-6 && d2 < minD2) minD2 = d2;
+}
+
+const edges = [];
+for (let i = 0; i < baseVerts.length; i++) {
+    for (let j = i + 1; j < baseVerts.length; j++) {
+        let d2 = 0;
+        for(let k=0; k<4; k++) d2 += Math.pow(baseVerts[i][k] - baseVerts[j][k], 2);
+        if (Math.abs(d2 - minD2) < 1e-4) {
+            let dx = Math.abs(baseVerts[i][0] - baseVerts[j][0]);
+            let dy = Math.abs(baseVerts[i][1] - baseVerts[j][1]);
+            let dz = Math.abs(baseVerts[i][2] - baseVerts[j][2]);
+            let dw = Math.abs(baseVerts[i][3] - baseVerts[j][3]);
+            let m = Math.max(dx, dy, dz, dw);
+            let cIdx = 0; // Red
+            if (m === dy) cIdx = 1; // Blue
+            else if (m === dz) cIdx = 2; // Green
+            else if (m === dw) cIdx = 3; // Purple
+            
+            edges.push({ i: i, j: j, c: cIdx });
+        }
+    }
+}
+
+// ==========================================
+// 2. 렌더링 엔진 및 최적화된 DOM 구성
+// ==========================================
+function deg2rad(d){ return d*Math.PI/180; }
+function rotatePair(v,i,j,deg){ const t=deg2rad(deg), c=Math.cos(t), s=Math.sin(t); const a=v[i], b=v[j]; v[i]=a*c-b*s; v[j]=a*s+b*c; return v; }
+function transform4(v0){
+  let v=v0.slice();
+  rotatePair(v,2,3,+sliders.xy.value); 
+  rotatePair(v,0,3,+sliders.yz.value); 
+  rotatePair(v,1,3,+sliders.xz.value); 
+  rotatePair(v,1,2,+sliders.xw.value); 
+  rotatePair(v,0,2,+sliders.yw.value); 
+  rotatePair(v,0,1,+sliders.zw.value); 
+  return v;
+}
+function view3(p){
+  const [x,y,z]=p;
+  const cy=Math.cos(yaw), sy=Math.sin(yaw);
+  let x1 = x*cy + z*sy;
+  let z1 = -x*sy + z*cy;
+  const cp=Math.cos(pitch), sp=Math.sin(pitch);
+  let y1 = y*cp - z1*sp;
+  let z2 = y*sp + z1*cp;
+  return [x1,y1,z2];
+}
+function project3(v){
+  const [x,y,z,w]=v;
+  const wScale = 1/(1+0.18*(w+1.2));
+  const x2 = x*wScale, y2 = y*wScale, z2 = z*wScale;
+  const [vx,vy,vz]=view3([x2,y2,z2]);
+  const scale=122*zoom;
+  const f = 9/(9+vz*0.20);
+  return {x:575+vx*scale*f, y:345-vy*scale*f, z:vz, w:w, f};
+}
+
+function drawGridAndAxes(){
+  const grid=$('grid'); grid.innerHTML='';
+  const size=7, yFloor=-2.55;
+  for(let i=-size;i<=size;i++){
+    let a=project3([i,yFloor,-size,0]), b=project3([i,yFloor,size,0]);
+    let l=document.createElementNS("http://www.w3.org/2000/svg",'line');
+    l.setAttribute('x1',a.x); l.setAttribute('y1',a.y); l.setAttribute('x2',b.x); l.setAttribute('y2',b.y); grid.appendChild(l);
+    a=project3([-size,yFloor,i,0]); b=project3([size,yFloor,i,0]);
+    l=document.createElementNS("http://www.w3.org/2000/svg",'line');
+    l.setAttribute('x1',a.x); l.setAttribute('y1',a.y); l.setAttribute('x2',b.x); l.setAttribute('y2',b.y); grid.appendChild(l);
+  }
+  const axes=$('axes'); axes.innerHTML='';
+  const origin=project3([0,0,0,0]);
+  const axisData=[{p:[3.2,0,0,0], label:'X'},{p:[0,3.2,0,0], label:'Y'},{p:[0,0,3.2,0], label:'Z'}];
+  for(const a of axisData){
+    const q=project3(a.p);
+    const line=document.createElementNS("http://www.w3.org/2000/svg",'line');
+    line.setAttribute('x1',origin.x); line.setAttribute('y1',origin.y); line.setAttribute('x2',q.x); line.setAttribute('y2',q.y);
+    line.setAttribute('stroke','#94a3b8'); line.setAttribute('marker-end','url(#axisArrow)'); axes.appendChild(line);
+    const txt=document.createElementNS("http://www.w3.org/2000/svg",'text');
+    txt.setAttribute('x',q.x+10); txt.setAttribute('y',q.y+5); txt.setAttribute('fill','#94a3b8'); txt.setAttribute('font-size','22'); txt.setAttribute('font-weight','900'); txt.textContent=a.label; axes.appendChild(txt);
+  }
+}
+
+// 720개의 모서리와 120개의 꼭짓점 DOM 최초 1회 생성
+const edgeLines = [];
+const nodeCircles = [];
+const colors = ['#ff4a4a','#3b82f6','#67d76b','#a855f7'];
+const edgeGroup = $('cubeEdges');
+const nodeGroup = $('nodes');
+
+edges.forEach(e => {
+    const l = document.createElementNS("http://www.w3.org/2000/svg",'line');
+    l.setAttribute('stroke', colors[e.c]);
+    l.setAttribute('stroke-linecap','round');
+    edgeGroup.appendChild(l);
+    edgeLines.push(l);
+});
+
+baseVerts.forEach(v => {
+    const c = document.createElementNS("http://www.w3.org/2000/svg",'circle');
+    c.setAttribute('fill','#111827');
+    c.setAttribute('stroke','#f8fafc');
+    c.setAttribute('stroke-width','1.5');
+    nodeGroup.appendChild(c);
+    nodeCircles.push(c);
+});
+
+function update(){
+  for(const k of Object.keys(sliders)) vals[k].textContent = Math.round(+sliders[k].value)+'°';
+  drawGridAndAxes();
+  
+  const verts4 = baseVerts.map(transform4);
+  const pts = verts4.map(project3);
+  
+  // 모서리 업데이트
+  for(let i = 0; i < edges.length; i++){
+    const e = edges[i];
+    const p1 = pts[e.i];
+    const p2 = pts[e.j];
+    const l = edgeLines[i];
+    
+    l.setAttribute('x1', p1.x);
+    l.setAttribute('y1', p1.y);
+    l.setAttribute('x2', p2.x);
+    l.setAttribute('y2', p2.y);
+    
+    let wMid = (p1.w + p2.w) / 2;
+    let sw = 1.2;
+    if(wMid > 0.4) sw *= 0.6;
+    
+    l.setAttribute('stroke-width', sw.toFixed(1));
+    l.setAttribute('stroke-opacity', wMid > 0 ? '0.35' : '0.85');
+  }
+
+  // 꼭짓점 업데이트
+  for(let i = 0; i < pts.length; i++){
+    const p = pts[i];
+    const c = nodeCircles[i];
+    c.setAttribute('cx', p.x);
+    c.setAttribute('cy', p.y);
+    c.setAttribute('r', p.z > 0 ? 3.5 : 2.5);
+    
+    // W축 방향에 따라 멀어지면 투명하게 처리해 원근감 극대화
+    c.setAttribute('opacity', p.w > 0 ? '0.4' : '1.0'); 
+  }
+}
+
+function setValues(obj){ 
+  for(const k of Object.keys(sliders)){
+    if(obj[k]!==undefined) sliders[k].value=obj[k]; 
+  }
+  update(); 
+}
+
+Object.values(sliders).forEach(s=>s.addEventListener('input',()=>{playing=false; lastTime=null; $('play').textContent='4차원 동시 회전 재생'; update();}));
+$('reset').addEventListener('click',()=>{playing=false; lastTime=null; currentSimTime=0; $('play').textContent='4차원 동시 회전 재생'; setValues(initialState);});
+$('ex4').addEventListener('click',()=>{playing=false; lastTime=null; $('play').textContent='4차원 동시 회전 재생'; setValues(startState);});
+$('ex3').addEventListener('click',()=>{playing=false; lastTime=null; $('play').textContent='4차원 동시 회전 재생'; setValues({xy:0,yz:0,xz:0,xw:35,yw:20,zw:28});});
+
+$('speedSlider').addEventListener('input', (e) => {
+  speedMultiplier = parseFloat(e.target.value);
+  $('speedVal').textContent = speedMultiplier.toFixed(1) + 'x';
+});
+
+$('play').addEventListener('click',()=>{
+  if(playing){
+    playing=false;
+    $('play').textContent='4차원 동시 회전 재생';
+    return;
+  }
+  playing=true;
+  lastTime=performance.now();
+  $('play').textContent='일시정지';
+  requestAnimationFrame(animate);
+});
+
+function animate(t){
+  if(!playing) return;
+  if(!lastTime) lastTime = t;
+  const dt = t - lastTime;
+  lastTime = t;
+  
+  currentSimTime += dt * speedMultiplier;
+  const s = currentSimTime / 2000; 
+  
+  setValues({
+    xy:34*Math.sin(s*0.18),
+    yz:22*Math.sin(s*0.13 + 1.20),
+    xz:44*Math.sin(s*0.15 + 0.70),
+    xw:30*Math.sin(s*0.16 + 2.10),
+    yw:38*Math.sin(s*0.12 + 1.00),
+    zw:20*Math.sin(s*0.14 + 0.40)
+  });
+  requestAnimationFrame(animate);
+}
+
+let dragging=false,lastX=0,lastY=0;
+const right=document.querySelector('.right');
+right.addEventListener('pointerdown',e=>{dragging=true; lastX=e.clientX; lastY=e.clientY; right.setPointerCapture(e.pointerId);});
+right.addEventListener('pointermove',e=>{ if(!dragging) return; const dx=e.clientX-lastX, dy=e.clientY-lastY; lastX=e.clientX; lastY=e.clientY; yaw += dx*0.006; pitch += dy*0.006; pitch=Math.max(-1.12,Math.min(1.12,pitch)); update(); });
+right.addEventListener('pointerup',()=>dragging=false);
+right.addEventListener('pointercancel',()=>dragging=false);
+right.addEventListener('wheel',e=>{ e.preventDefault(); zoom*=e.deltaY>0 ? 0.92 : 1.08; zoom=Math.max(0.58,Math.min(1.9,zoom)); update(); },{passive:false});
+
+setValues(startState);
+</script>
+</body>
+</html>

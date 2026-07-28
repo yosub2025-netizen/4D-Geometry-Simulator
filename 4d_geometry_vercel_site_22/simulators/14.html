@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>3차원 도형(정사면체) 회전 시뮬레이터</title>
+<style>
+:root{
+  --bg:#0f172a; --deep:#020617; --panel:#111827; --line:#334155; --line2:#475569;
+  --text:#f8fafc; --muted:#9fb0c8; --red:#ff4a4a; --blue:#3b82f6; --green:#67d76b; --purple:#a855f7; --purple2:#7c3aed; --cyan:#0ea5e9;
+}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:Pretendard,"Noto Sans KR","Malgun Gothic",Arial,sans-serif}
+body{display:flex;flex-direction:column}
+header{height:64px;flex-shrink:0;background:#0b1220;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:center;position:relative}
+header h1{margin:0;font-size:30px;line-height:1;font-weight:900;letter-spacing:-0.03em}
+.badge{position:absolute;left:14px;top:14px;padding:8px 16px;border-radius:999px;background:#241a4b;border:1px solid #7c3aed;color:#ded6ff;font-size:14px;font-weight:800}
+main{flex:1;display:flex;min-height:0}
+.left{width:380px;min-width:350px;overflow:hidden;background:#0f172a;border-right:1px solid var(--line);padding:24px;display:flex;flex-direction:column;justify-content:center;gap:16px}
+.right{flex:1;position:relative;background:radial-gradient(circle at 48% 45%,#192537 0%,#0a1120 54%,#020617 100%);overflow:hidden}
+.card{background:linear-gradient(180deg,rgba(17,24,39,.94),rgba(10,18,32,.94));border:1px solid var(--line2);border-radius:16px;box-shadow:0 10px 28px rgba(0,0,0,.22)}
+
+.controlsCard{padding:20px;display:flex;flex-direction:column;gap:14px;margin:auto 0;}
+.sectionTitle{font-size:20px;font-weight:900;margin:0 0 16px;text-align:center;color:white;letter-spacing:-0.02em}
+.sliderGrid{display:flex;flex-direction:column;gap:14px}
+.sliderBox{background:#111c2d;border:1px solid #28384e;border-radius:10px;padding:16px}
+.sliderHead{display:flex;justify-content:space-between;align-items:center;font-size:15px;font-weight:900;margin-bottom:12px}
+input[type=range]{width:100%;margin:0;height:14px;accent-color:var(--blue);cursor:pointer}
+
+.buttons{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+.btnRow{display:flex;gap:10px;}
+button{border:0;border-radius:999px;color:white;font-weight:900;font-size:15px;padding:12px;cursor:pointer;box-shadow:0 7px 18px rgba(0,0,0,.28);transition:transform .08s,filter .08s}
+button:active{transform:scale(.97)}
+.play{flex:1;background:linear-gradient(135deg,#0ea5e9,#0284c7)}
+.frontView{flex:1;background:linear-gradient(135deg,#67d76b,#16a34a)}
+.angleView{flex:1;background:linear-gradient(135deg,#a855f7,#7c3aed)}
+.reset{flex:1;background:#425167;border:1px solid #5b6c82}
+
+#stage{position:absolute;inset:0;width:100%;height:100%}
+.coordWidget{position:absolute;left:22px;top:22px;width:162px;height:162px;border-radius:14px;background:rgba(21,32,50,.82);border:1px solid #526177;box-shadow:0 10px 24px rgba(0,0,0,.28);display:flex;align-items:center;justify-content:center;z-index:3;backdrop-filter:blur(8px)}
+.mouseNote{position:absolute;right:22px;top:22px;z-index:3;background:rgba(15,23,42,.82);border:1px solid #526177;border-radius:12px;padding:10px 16px;color:#d7dee8;font-size:14px;font-weight:800}
+.divider{position:absolute;left:0;top:0;bottom:0;width:9px;background:#e5e7eb;opacity:.85;z-index:4;box-shadow:0 0 0 1px rgba(0,0,0,.1)}
+.divider:after{content:"";position:absolute;left:2px;top:50%;width:5px;height:160px;transform:translateY(-50%);border-radius:8px;background:#9ca3af}
+@media(max-width:900px){
+  html,body{overflow:auto}
+  main{flex-direction:column}
+  .left{width:100%;min-width:0;border-right:none;border-bottom:1px solid var(--line)}
+  .right{height:820px;flex:none}
+  .divider{display:none}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="badge">3D 정사면체(Tetrahedron) 시뮬레이터</div>
+  <h1>3차원 도형(정사면체)의 3차원 회전 시뮬레이터</h1>
+</header>
+
+<main>
+  <section class="left">
+    <div class="card controlsCard">
+      <h2 class="sectionTitle">3차원 회전 제어 패널</h2>
+      <div class="sliderGrid">
+        <div class="sliderBox">
+          <div class="sliderHead"><span style="color:var(--red)">X축 기준 회전 (YZ 평면)</span><span id="xVal">0°</span></div>
+          <input id="rotX" type="range" min="-180" max="180" step="0.1" value="0">
+        </div>
+        <div class="sliderBox">
+          <div class="sliderHead"><span style="color:var(--green)">Y축 기준 회전 (ZX 평면)</span><span id="yVal">0°</span></div>
+          <input id="rotY" type="range" min="-180" max="180" step="0.1" value="0">
+        </div>
+        <div class="sliderBox">
+          <div class="sliderHead"><span style="color:var(--blue)">Z축 기준 회전 (XY 평면)</span><span id="zVal">0°</span></div>
+          <input id="rotZ" type="range" min="-180" max="180" step="0.1" value="0">
+        </div>
+      </div>
+      
+      <div class="buttons">
+        <button id="play" class="play">3차원 동시 회전 재생</button>
+        
+        <div class="sliderBox" style="background:#1e293b; border-color:#334155; padding: 12px 16px;">
+          <div class="sliderHead"><span>자동 재생 속도</span><span id="speedVal">1.0x</span></div>
+          <input id="speedSlider" type="range" min="0.5" max="5" step="0.1" value="1.0">
+        </div>
+
+        <div class="btnRow">
+          <button id="frontView" class="frontView">정면 보기</button>
+          <button id="angleView" class="angleView">비스듬히 보기</button>
+          <button id="reset" class="reset">초기화</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="right">
+    <div class="divider"></div>
+    <div class="coordWidget card">
+      <svg width="120" height="120" viewBox="0 0 120 120">
+        <text x="60" y="16" fill="#ffffff" font-size="14" font-weight="900" text-anchor="middle">3차원 좌표계</text>
+        <circle cx="56" cy="58" r="4" fill="#f8fafc"/>
+        <line x1="56" y1="58" x2="56" y2="16" stroke="#67d76b" stroke-width="3" marker-end="url(#axisArrowY)"/>
+        <line x1="56" y1="58" x2="100" y2="58" stroke="#ff4a4a" stroke-width="3" marker-end="url(#axisArrowX)"/>
+        <line x1="56" y1="58" x2="22" y2="92" stroke="#3b82f6" stroke-width="3" marker-end="url(#axisArrowZ)"/>
+        <defs>
+          <marker id="axisArrowX" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3 z" fill="#ff4a4a"/></marker>
+          <marker id="axisArrowY" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3 z" fill="#67d76b"/></marker>
+          <marker id="axisArrowZ" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3 z" fill="#3b82f6"/></marker>
+        </defs>
+        <text x="57" y="10" fill="#67d76b" font-size="12" font-weight="900">Y</text>
+        <text x="105" y="63" fill="#ff4a4a" font-size="12" font-weight="900">X</text>
+        <text x="10" y="102" fill="#3b82f6" font-size="12" font-weight="900">Z</text>
+      </svg>
+    </div>
+    <div class="mouseNote">마우스로 드래그: 보는 방향 회전 · 휠: 확대/축소</div>
+
+    <svg id="stage" viewBox="0 0 1100 760" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <marker id="axisArrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3 z" fill="#94a3b8"/></marker>
+        <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="2.8" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <linearGradient id="faceGradOuter" x1="0" x2="1" y1="0" y2="1">
+          <stop offset="0%" stop-color="#cbd5e1" stop-opacity=".35"/>
+          <stop offset="100%" stop-color="#94a3b8" stop-opacity=".15"/>
+        </linearGradient>
+        <linearGradient id="faceGradInner" x1="0" x2="1" y1="0" y2="1">
+          <stop offset="0%" stop-color="#e9d5ff" stop-opacity=".25"/>
+          <stop offset="100%" stop-color="#a78bfa" stop-opacity=".10"/>
+        </linearGradient>
+      </defs>
+      <g id="grid" stroke="#233044" stroke-width="1" opacity=".70"></g>
+      <g id="axes" stroke-width="3.2" stroke-linecap="round" opacity=".82"></g>
+      <g id="cubeFaces"></g>
+      <g id="cubeEdges" filter="url(#glow)"></g>
+      <g id="nodes"></g>
+    </svg>
+  </section>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const sliders = {x:$('rotX'), y:$('rotY'), z:$('rotZ')};
+const vals = {x:$('xVal'), y:$('yVal'), z:$('zVal')};
+let yaw=-0.58, pitch=0.18, zoom=1.0, playing=false;
+let lastTime=null, currentSimTime=0;
+let speedMultiplier = 1.0;
+
+const initialState = {x:0, y:0, z:0};
+const angleState = {x:35, y:45, z:15};
+
+// 정사면체 (Tetrahedron) 3차원 좌표 계산 (정중앙 원점 기준)
+const R_scale = 1.8;
+const baseVerts = [
+  [R_scale, R_scale, R_scale],
+  [R_scale, -R_scale, -R_scale],
+  [-R_scale, R_scale, -R_scale],
+  [-R_scale, -R_scale, R_scale]
+];
+
+// 정사면체의 6개 모서리를 서로 꼬인 위치에 있는 쌍으로 3그룹화
+// 색상: 0(빨강), 1(파랑), 2(초록)
+const edges = [
+  {i: 0, j: 1, c: 0}, {i: 2, j: 3, c: 0}, // X축 느낌의 대칭쌍
+  {i: 0, j: 2, c: 1}, {i: 1, j: 3, c: 1}, // Y축 느낌의 대칭쌍
+  {i: 0, j: 3, c: 2}, {i: 1, j: 2, c: 2}  // Z축 느낌의 대칭쌍
+];
+
+// 정사면체의 4개 면 생성
+const simplexFaces = [
+  [0, 1, 2],
+  [0, 1, 3],
+  [0, 2, 3],
+  [1, 2, 3]
+];
+
+function edgeColor(dim){ return ['#ff4a4a','#3b82f6','#67d76b'][dim]; }
+
+function deg2rad(d){ return d*Math.PI/180; }
+
+// 3차원 기본 회전 행렬 적용
+function transform3(v0){
+  let [x, y, z] = v0;
+  const rx = deg2rad(+sliders.x.value);
+  const ry = deg2rad(+sliders.y.value);
+  const rz = deg2rad(+sliders.z.value);
+
+  // X축 회전
+  let y1 = y * Math.cos(rx) - z * Math.sin(rx);
+  let z1 = y * Math.sin(rx) + z * Math.cos(rx);
+  y = y1; z = z1;
+
+  // Y축 회전
+  let x2 = x * Math.cos(ry) + z * Math.sin(ry);
+  let z2 = -x * Math.sin(ry) + z * Math.cos(ry);
+  x = x2; z = z2;
+
+  // Z축 회전
+  let x3 = x * Math.cos(rz) - y * Math.sin(rz);
+  let y3 = x * Math.sin(rz) + y * Math.cos(rz);
+  x = x3; y = y3;
+
+  return [x, y, z];
+}
+
+function view3(p){
+  const [x,y,z]=p;
+  const cy=Math.cos(yaw), sy=Math.sin(yaw);
+  let x1 = x*cy + z*sy;
+  let z1 = -x*sy + z*cy;
+  const cp=Math.cos(pitch), sp=Math.sin(pitch);
+  let y1 = y*cp - z1*sp;
+  let z2 = y*sp + z1*cp;
+  return [x1,y1,z2];
+}
+
+function project3(v){
+  const [x,y,z] = v;
+  const [vx,vy,vz] = view3([x,y,z]);
+  const scale = 122 * zoom;
+  // 원근감(Perspective)을 약간 줍니다.
+  const f = 9 / (9 + vz * 0.20);
+  return {x: 575 + vx * scale * f, y: 345 - vy * scale * f, z: vz, f: f};
+}
+
+function pstr(points){ return points.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '); }
+
+function drawGridAndAxes(){
+  const grid=$('grid'); grid.innerHTML='';
+  const size=7, yFloor=-2.55;
+  for(let i=-size;i<=size;i++){
+    let a=project3([i,yFloor,-size]), b=project3([i,yFloor,size]);
+    let l=document.createElementNS("http://www.w3.org/2000/svg",'line');
+    l.setAttribute('x1',a.x); l.setAttribute('y1',a.y); l.setAttribute('x2',b.x); l.setAttribute('y2',b.y); grid.appendChild(l);
+    a=project3([-size,yFloor,i]); b=project3([size,yFloor,i]);
+    l=document.createElementNS("http://www.w3.org/2000/svg",'line');
+    l.setAttribute('x1',a.x); l.setAttribute('y1',a.y); l.setAttribute('x2',b.x); l.setAttribute('y2',b.y); grid.appendChild(l);
+  }
+  const axes=$('axes'); axes.innerHTML='';
+  const origin=project3([0,0,0]);
+  const axisData=[{p:[3.2,0,0], label:'X', c:'#ff4a4a'},{p:[0,3.2,0], label:'Y', c:'#67d76b'},{p:[0,0,3.2], label:'Z', c:'#3b82f6'}];
+  for(const a of axisData){
+    const q=project3(a.p);
+    const line=document.createElementNS("http://www.w3.org/2000/svg",'line');
+    line.setAttribute('x1',origin.x); line.setAttribute('y1',origin.y); line.setAttribute('x2',q.x); line.setAttribute('y2',q.y);
+    line.setAttribute('stroke',a.c); line.setAttribute('stroke-width','2'); line.setAttribute('marker-end','url(#axisArrow)'); axes.appendChild(line);
+    const txt=document.createElementNS("http://www.w3.org/2000/svg",'text');
+    txt.setAttribute('x',q.x+10); txt.setAttribute('y',q.y+5); txt.setAttribute('fill',a.c); txt.setAttribute('font-size','22'); txt.setAttribute('font-weight','900'); txt.textContent=a.label; axes.appendChild(txt);
+  }
+}
+
+function update(){
+  for(const k of Object.keys(sliders)) vals[k].textContent = Math.round(+sliders[k].value)+'°';
+  drawGridAndAxes();
+  const verts3 = baseVerts.map(transform3);
+  const pts = verts3.map(project3);
+  
+  const facesGroup=$('cubeFaces'); facesGroup.innerHTML='';
+  const sortedFaces = simplexFaces.map((f,idx) => {
+    const z = (pts[f[0]].z + pts[f[1]].z + pts[f[2]].z) / 3;
+    // 방향 벡터를 이용해 앞면/뒷면을 판별 (Backface Culling 느낌으로 색상 변경)
+    const v1 = {x: pts[f[1]].x - pts[f[0]].x, y: pts[f[1]].y - pts[f[0]].y};
+    const v2 = {x: pts[f[2]].x - pts[f[0]].x, y: pts[f[2]].y - pts[f[0]].y};
+    const cross = v1.x * v2.y - v1.y * v2.x;
+    return {f, z, cross, idx};
+  }).sort((a,b) => (a.z - b.z) || (a.idx - b.idx));
+
+  for(const item of sortedFaces){
+    const poly=document.createElementNS("http://www.w3.org/2000/svg",'polygon');
+    poly.setAttribute('points', pstr(item.f.map(i=>pts[i])));
+    poly.setAttribute('fill', item.cross < 0 ? 'url(#faceGradOuter)' : 'url(#faceGradInner)');
+    poly.setAttribute('stroke','rgba(255,255,255,.3)');
+    poly.setAttribute('stroke-width','1.5');
+    facesGroup.appendChild(poly);
+  }
+  
+  const edgeGroup=$('cubeEdges'); edgeGroup.innerHTML='';
+  const sortedEdges = edges.map((e,idx)=>({i:e.i, j:e.j, c:e.c, z:(pts[e.i].z+pts[e.j].z)/2, idx})).sort((a,b)=>(a.z-b.z) || (a.idx-b.idx));
+  for(const e of sortedEdges){
+    const l=document.createElementNS("http://www.w3.org/2000/svg",'line');
+    l.setAttribute('x1',pts[e.i].x); l.setAttribute('y1',pts[e.i].y); l.setAttribute('x2',pts[e.j].x); l.setAttribute('y2',pts[e.j].y);
+    l.setAttribute('stroke',edgeColor(e.c));
+    l.setAttribute('stroke-width', '5.5');
+    l.setAttribute('stroke-linecap','round');
+    l.setAttribute('stroke-opacity', e.z > 0 ? '0.5' : '1.0'); // 뒤에 있는 선은 반투명하게
+    edgeGroup.appendChild(l);
+  }
+  
+  const nodes=$('nodes'); nodes.innerHTML='';
+  const nodeList = pts.map((p,i)=>({p,z:p.z,i})).sort((a,b)=>a.z-b.z);
+  for(const n of nodeList){
+    const c=document.createElementNS("http://www.w3.org/2000/svg",'circle');
+    c.setAttribute('cx',n.p.x); c.setAttribute('cy',n.p.y); c.setAttribute('r',n.p.z>0?6.5:5.5);
+    c.setAttribute('fill','#111827'); c.setAttribute('stroke','#f8fafc'); c.setAttribute('stroke-width','2.5');
+    nodes.appendChild(c);
+  }
+}
+
+function setValues(obj){ 
+  for(const k of Object.keys(sliders)){
+    if(obj[k]!==undefined) sliders[k].value=obj[k]; 
+  }
+  update(); 
+}
+
+Object.values(sliders).forEach(s=>s.addEventListener('input',()=>{playing=false; lastTime=null; $('play').textContent='3차원 동시 회전 재생'; update();}));
+$('reset').addEventListener('click',()=>{playing=false; lastTime=null; currentSimTime=0; $('play').textContent='3차원 동시 회전 재생'; setValues(initialState);});
+$('frontView').addEventListener('click',()=>{playing=false; lastTime=null; $('play').textContent='3차원 동시 회전 재생'; setValues(initialState);});
+$('angleView').addEventListener('click',()=>{playing=false; lastTime=null; $('play').textContent='3차원 동시 회전 재생'; setValues(angleState);});
+
+$('speedSlider').addEventListener('input', (e) => {
+  speedMultiplier = parseFloat(e.target.value);
+  $('speedVal').textContent = speedMultiplier.toFixed(1) + 'x';
+});
+
+$('play').addEventListener('click',()=>{
+  if(playing){
+    playing=false;
+    $('play').textContent='3차원 동시 회전 재생';
+    return;
+  }
+  playing=true;
+  lastTime=performance.now();
+  $('play').textContent='일시정지';
+  requestAnimationFrame(animate);
+});
+
+function animate(t){
+  if(!playing) return;
+  if(!lastTime) lastTime = t;
+  const dt = t - lastTime;
+  lastTime = t;
+  
+  currentSimTime += dt * speedMultiplier;
+  const s = currentSimTime / 2000; 
+  
+  setValues({
+    x: 180 * Math.sin(s * 0.4),
+    y: 180 * Math.sin(s * 0.3 + 1.2),
+    z: 180 * Math.sin(s * 0.5 + 0.7)
+  });
+  requestAnimationFrame(animate);
+}
+
+let dragging=false,lastX=0,lastY=0;
+const right=document.querySelector('.right');
+right.addEventListener('pointerdown',e=>{dragging=true; lastX=e.clientX; lastY=e.clientY; right.setPointerCapture(e.pointerId);});
+right.addEventListener('pointermove',e=>{ if(!dragging) return; const dx=e.clientX-lastX, dy=e.clientY-lastY; lastX=e.clientX; lastY=e.clientY; yaw += dx*0.006; pitch += dy*0.006; pitch=Math.max(-1.12,Math.min(1.12,pitch)); update(); });
+right.addEventListener('pointerup',()=>dragging=false);
+right.addEventListener('pointercancel',()=>dragging=false);
+right.addEventListener('wheel',e=>{ e.preventDefault(); zoom*=e.deltaY>0 ? 0.92 : 1.08; zoom=Math.max(0.58,Math.min(1.9,zoom)); update(); },{passive:false});
+
+setValues(initialState);
+</script>
+</body>
+</html>
